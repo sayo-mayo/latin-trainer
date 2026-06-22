@@ -6,14 +6,14 @@
 <title>Latin Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#FAFAF8; --surface:#FFFFFF; --surface-2:#F5F5F3; --ink:#1A1A1A; --muted:#71717A;
   --line:#E7E6E2; --accent:#15725B; --accent-deep:#0F5544; --ok:#15803D; --err:#B91C1C; --brass:#92660E;
   --hi:#ECF3F0;
   --c-nom:#15725B; --c-voc:#4D7C0F; --c-gen:#A16207; --c-dat:#C2410C; --c-acc:#BE123C; --c-abl:#1D4ED8;
-  --serif:"EB Garamond",Georgia,"Times New Roman",serif;
+  --serif:"Cardo",Georgia,"Times New Roman",serif;
   --display:"Cinzel",var(--serif); --ui:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --maxw:880px;
 }
@@ -873,60 +873,389 @@ const IRREGULAR_VERBS = { sum:SUM, possum:POSSUM, eo:EO, fero:FERO, volo:VOLO, n
    ===================================================================== */
 const LEXICON = {
   nouns: [
-    { key:"puella", lemma:"puella", gen:"puellae", gender:"f", decl:1, gloss:"girl" },
-    { key:"poeta", lemma:"poēta", gen:"poētae", gender:"m", decl:1, gloss:"poet" },
-    { key:"dominus", lemma:"dominus", gen:"dominī", gender:"m", decl:2, gloss:"master, lord" },
-    { key:"puer", lemma:"puer", gen:"puerī", gender:"m", decl:2, gloss:"boy" },
-    { key:"ager", lemma:"ager", gen:"agrī", gender:"m", decl:2, gloss:"field" },
-    { key:"filius", lemma:"fīlius", gen:"fīliī", gender:"m", decl:2, gloss:"son" },
-    { key:"bellum", lemma:"bellum", gen:"bellī", gender:"n", decl:2, gloss:"war" },
-    { key:"rex", lemma:"rēx", gen:"rēgis", gender:"m", decl:3, gloss:"king" },
-    { key:"miles", lemma:"mīles", gen:"mīlitis", gender:"m", decl:3, gloss:"soldier" },
-    { key:"civis", lemma:"cīvis", gen:"cīvis", gender:"m", decl:3, istem:true, gloss:"citizen" },
-    { key:"urbs", lemma:"urbs", gen:"urbis", gender:"f", decl:3, istem:true, gloss:"city" },
-    { key:"corpus", lemma:"corpus", gen:"corporis", gender:"n", decl:3, gloss:"body" },
-    { key:"nomen", lemma:"nōmen", gen:"nōminis", gender:"n", decl:3, gloss:"name" },
-    { key:"mare", lemma:"mare", gen:"maris", gender:"n", decl:3, istem:true, gloss:"sea" },
-    { key:"exercitus", lemma:"exercitus", gen:"exercitūs", gender:"m", decl:4, gloss:"army" },
-    { key:"manus", lemma:"manus", gen:"manūs", gender:"f", decl:4, gloss:"hand, band" },
-    { key:"cornu", lemma:"cornū", gen:"cornūs", gender:"n", decl:4, gloss:"horn, wing" },
-    { key:"res", lemma:"rēs", gen:"reī", gender:"f", decl:5, gloss:"thing, matter" },
-    { key:"dies", lemma:"diēs", gen:"diēī", gender:"m", decl:5, gloss:"day" }
+    {"key": "aestas", "lemma": "aestas", "gen": "aestatis", "gender": "f", "decl": 3, "gloss": "summer", "cite": "aestas, aestatis, f"},
+    {"key": "ager", "lemma": "ager", "gen": "agri", "gender": "m", "decl": 2, "gloss": "field", "cite": "ager, agri, m"},
+    {"key": "agricola", "lemma": "agricola", "gen": "agricolae", "gender": "m", "decl": 1, "gloss": "farmer", "cite": "agricola, agricolae, m"},
+    {"key": "amicus", "lemma": "amicus", "gen": "amici", "gender": "m", "decl": 2, "gloss": "friend", "cite": "amicus, amici, m"},
+    {"key": "animal", "lemma": "animal", "gen": "animalis", "gender": "n", "decl": 3, "istem": true, "gloss": "animal", "cite": "animal, animalis, n"},
+    {"key": "animus", "lemma": "animus", "gen": "animi", "gender": "m", "decl": 2, "gloss": "mind, spirit", "cite": "animus, animi, m"},
+    {"key": "annus", "lemma": "annus", "gen": "anni", "gender": "m", "decl": 2, "gloss": "year", "cite": "annus, anni, m"},
+    {"key": "aqua", "lemma": "aqua", "gen": "aquae", "gender": "f", "decl": 1, "gloss": "water", "cite": "aqua, aquae, f"},
+    {"key": "arbor", "lemma": "arbor", "gen": "arboris", "gender": "f", "decl": 3, "gloss": "tree", "cite": "arbor, arboris, f"},
+    {"key": "argentum", "lemma": "argentum", "gen": "argenti", "gender": "n", "decl": 2, "gloss": "silver, money", "cite": "argentum, argenti, n"},
+    {"key": "ars", "lemma": "ars", "gen": "artis", "gender": "f", "decl": 3, "istem": true, "gloss": "skill, art", "cite": "ars, artis, f"},
+    {"key": "arx", "lemma": "arx", "gen": "arcis", "gender": "f", "decl": 3, "istem": true, "gloss": "citadel", "cite": "arx, arcis, f"},
+    {"key": "atrium", "lemma": "atrium", "gen": "atrii", "gender": "n", "decl": 2, "gloss": "hall", "cite": "atrium, atrii, n"},
+    {"key": "aurum", "lemma": "aurum", "gen": "auri", "gender": "n", "decl": 2, "gloss": "gold", "cite": "aurum, auri, n"},
+    {"key": "auxilium", "lemma": "auxilium", "gen": "auxilii", "gender": "n", "decl": 2, "gloss": "help", "cite": "auxilium, auxilii, n"},
+    {"key": "barbarus2", "lemma": "barbarus", "gen": "barbari", "gender": "m", "decl": 2, "gloss": "barbarian (noun)", "cite": "barbarus, barbari, m"},
+    {"key": "bellum", "lemma": "bellum", "gen": "belli", "gender": "n", "decl": 2, "gloss": "war", "cite": "bellum, belli, n"},
+    {"key": "caelum", "lemma": "caelum", "gen": "caeli", "gender": "n", "decl": 2, "gloss": "sky", "cite": "caelum, caeli, n"},
+    {"key": "campus", "lemma": "campus", "gen": "campi", "gender": "m", "decl": 2, "gloss": "plain", "cite": "campus, campi, m"},
+    {"key": "canis", "lemma": "canis", "gen": "canis", "gender": "m", "decl": 3, "gloss": "dog", "cite": "canis, canis, c"},
+    {"key": "captivus", "lemma": "captivus", "gen": "captivi", "gender": "m", "decl": 2, "gloss": "prisoner, captive", "cite": "captivus, captivi, m"},
+    {"key": "caput", "lemma": "caput", "gen": "capitis", "gender": "n", "decl": 3, "gloss": "head", "cite": "caput, capitis, n"},
+    {"key": "carmen", "lemma": "carmen", "gen": "carminis", "gender": "n", "decl": 3, "gloss": "poem, song", "cite": "carmen, carminis, n"},
+    {"key": "cena", "lemma": "cena", "gen": "cenae", "gender": "f", "decl": 1, "gloss": "dinner", "cite": "cena, cenae, f"},
+    {"key": "cibus", "lemma": "cibus", "gen": "cibi", "gender": "m", "decl": 2, "gloss": "food", "cite": "cibus, cibi, m"},
+    {"key": "civis", "lemma": "civis", "gen": "civis", "gender": "m", "decl": 3, "istem": true, "gloss": "citizen", "cite": "civis, civis, c"},
+    {"key": "clamor", "lemma": "clamor", "gen": "clamoris", "gender": "m", "decl": 3, "gloss": "shout", "cite": "clamor, clamoris, m"},
+    {"key": "classis", "lemma": "classis", "gen": "classis", "gender": "f", "decl": 3, "istem": true, "gloss": "fleet", "cite": "classis, classis, f"},
+    {"key": "collis", "lemma": "collis", "gen": "collis", "gender": "m", "decl": 3, "istem": true, "gloss": "hill", "cite": "collis, collis, m"},
+    {"key": "comes", "lemma": "comes", "gen": "comitis", "gender": "m", "decl": 3, "gloss": "companion", "cite": "comes, comitis, c"},
+    {"key": "consilium", "lemma": "consilium", "gen": "consilii", "gender": "n", "decl": 2, "gloss": "plan", "cite": "consilium, consilii, n"},
+    {"key": "consul", "lemma": "consul", "gen": "consulis", "gender": "m", "decl": 3, "gloss": "consul", "cite": "consul, consulis, m"},
+    {"key": "cornu", "lemma": "cornu", "gen": "cornus", "gender": "n", "decl": 4, "gloss": "horn, wing (of an army)", "cite": "cornu, cornus, n"},
+    {"key": "corpus", "lemma": "corpus", "gen": "corporis", "gender": "n", "decl": 3, "gloss": "body", "cite": "corpus, corporis, n"},
+    {"key": "cubile", "lemma": "cubile", "gen": "cubilis", "gender": "n", "decl": 3, "istem": true, "gloss": "bed", "cite": "cubile, cubilis, n"},
+    {"key": "cura", "lemma": "cura", "gen": "curae", "gender": "f", "decl": 1, "gloss": "care", "cite": "cura, curae, f"},
+    {"key": "custos", "lemma": "custos", "gen": "custodis", "gender": "m", "decl": 3, "gloss": "guard", "cite": "custos, custodis, c"},
+    {"key": "dea", "lemma": "dea", "gen": "deae", "gender": "f", "decl": 1, "gloss": "goddess", "cite": "dea, deae, f"},
+    {"key": "deus", "lemma": "deus", "gen": "dei", "gender": "m", "decl": 5, "gloss": "god", "cite": "deus, dei, m"},
+    {"key": "dies", "lemma": "dies", "gen": "diei", "gender": "m", "decl": 5, "gloss": "day", "cite": "dies, diei, m"},
+    {"key": "dolor", "lemma": "dolor", "gen": "doloris", "gender": "m", "decl": 3, "gloss": "pain, grief", "cite": "dolor, doloris, m"},
+    {"key": "dominus", "lemma": "dominus", "gen": "domini", "gender": "m", "decl": 2, "gloss": "master, lord", "cite": "dominus, domini, m"},
+    {"key": "domus", "lemma": "domus", "gen": "domus", "gender": "f", "decl": 4, "gloss": "house, home", "cite": "domus, domus, f"},
+    {"key": "donum", "lemma": "donum", "gen": "doni", "gender": "n", "decl": 2, "gloss": "gift", "cite": "donum, doni, n"},
+    {"key": "dux", "lemma": "dux", "gen": "ducis", "gender": "m", "decl": 3, "gloss": "leader", "cite": "dux, ducis, m"},
+    {"key": "epistola", "lemma": "epistola", "gen": "epistolae", "gender": "f", "decl": 1, "gloss": "letter", "cite": "epistola, epistolae, f"},
+    {"key": "eques", "lemma": "eques", "gen": "equitis", "gender": "m", "decl": 3, "gloss": "horseman (pl. = cavalry)", "cite": "eques, equitis, m"},
+    {"key": "equus", "lemma": "equus", "gen": "equi", "gender": "m", "decl": 2, "gloss": "horse", "cite": "equus, equi, m"},
+    {"key": "exercitus", "lemma": "exercitus", "gen": "exercitus", "gender": "m", "decl": 4, "gloss": "army", "cite": "exercitus, exercitus, m"},
+    {"key": "fabula", "lemma": "fabula", "gen": "fabulae", "gender": "f", "decl": 1, "gloss": "story", "cite": "fabula, fabulae, f"},
+    {"key": "fama", "lemma": "fama", "gen": "famae", "gender": "f", "decl": 1, "gloss": "fame, glory", "cite": "fama, famae, f"},
+    {"key": "femina", "lemma": "femina", "gen": "feminae", "gender": "f", "decl": 1, "gloss": "woman", "cite": "femina, feminae, f"},
+    {"key": "filia", "lemma": "filia", "gen": "filiae", "gender": "f", "decl": 1, "gloss": "daughter", "cite": "filia, filiae, f"},
+    {"key": "filius", "lemma": "filius", "gen": "filii", "gender": "m", "decl": 2, "gloss": "son", "cite": "filius, filii, m"},
+    {"key": "finis", "lemma": "finis", "gen": "finis", "gender": "m", "decl": 3, "istem": true, "gloss": "end, border", "cite": "finis, finis, m"},
+    {"key": "flos", "lemma": "flos", "gen": "floris", "gender": "m", "decl": 3, "gloss": "flower", "cite": "flos, floris, m"},
+    {"key": "flumen", "lemma": "flumen", "gen": "fluminis", "gender": "n", "decl": 3, "gloss": "river", "cite": "flumen, fluminis, n"},
+    {"key": "fons", "lemma": "fons", "gen": "fontis", "gender": "m", "decl": 3, "istem": true, "gloss": "fountain", "cite": "fons, fontis, m"},
+    {"key": "fortuna", "lemma": "fortuna", "gen": "fortunae", "gender": "f", "decl": 1, "gloss": "fortune", "cite": "fortuna, fortunae, f"},
+    {"key": "forum", "lemma": "forum", "gen": "fori", "gender": "n", "decl": 2, "gloss": "forum", "cite": "forum, fori, n"},
+    {"key": "frater", "lemma": "frater", "gen": "fratris", "gender": "m", "decl": 3, "gloss": "brother", "cite": "frater, fratris, m"},
+    {"key": "fuga", "lemma": "fuga", "gen": "fugae", "gender": "f", "decl": 1, "gloss": "flight, escape", "cite": "fuga, fugae, f"},
+    {"key": "gallia", "lemma": "Gallia", "gen": "Galliae", "gender": "f", "decl": 1, "gloss": "Gaul (the country)", "cite": "Gallia, Galliae, f"},
+    {"key": "gallus", "lemma": "Gallus", "gen": "Galli", "gender": "m", "decl": 2, "gloss": "a Gaul (the person)", "cite": "Gallus, Galli, m"},
+    {"key": "gaudium", "lemma": "gaudium", "gen": "gaudii", "gender": "n", "decl": 2, "gloss": "joy", "cite": "gaudium, gaudii, n"},
+    {"key": "gens", "lemma": "gens", "gen": "gentis", "gender": "f", "decl": 3, "istem": true, "gloss": "people, race", "cite": "gens, gentis, f"},
+    {"key": "genu", "lemma": "genu", "gen": "genus", "gender": "n", "decl": 4, "gloss": "knee", "cite": "genu, genus, n"},
+    {"key": "gladius", "lemma": "gladius", "gen": "gladii", "gender": "m", "decl": 2, "gloss": "sword", "cite": "gladius, gladii, m"},
+    {"key": "gradus", "lemma": "gradus", "gen": "gradus", "gender": "m", "decl": 4, "gloss": "step", "cite": "gradus, gradus, m"},
+    {"key": "graecia", "lemma": "Graecia", "gen": "Graeciae", "gender": "f", "decl": 1, "gloss": "Greece", "cite": "Graecia, Graeciae, f"},
+    {"key": "hasta", "lemma": "hasta", "gen": "hastae", "gender": "f", "decl": 1, "gloss": "spear", "cite": "hasta, hastae, f"},
+    {"key": "herba", "lemma": "herba", "gen": "herbae", "gender": "f", "decl": 1, "gloss": "grass", "cite": "herba, herbae, f"},
+    {"key": "homo", "lemma": "homo", "gen": "hominis", "gender": "m", "decl": 3, "gloss": "man, person", "cite": "homo, hominis, c"},
+    {"key": "hora", "lemma": "hora", "gen": "horae", "gender": "f", "decl": 1, "gloss": "hour", "cite": "hora, horae, f"},
+    {"key": "hortus", "lemma": "hortus", "gen": "horti", "gender": "m", "decl": 2, "gloss": "garden", "cite": "hortus, horti, m"},
+    {"key": "hostis", "lemma": "hostis", "gen": "hostis", "gender": "m", "decl": 3, "istem": true, "gloss": "enemy", "cite": "hostis, hostis, m"},
+    {"key": "ignis", "lemma": "ignis", "gen": "ignis", "gender": "m", "decl": 3, "istem": true, "gloss": "fire", "cite": "ignis, ignis, m"},
+    {"key": "imperator", "lemma": "imperator", "gen": "imperatoris", "gender": "m", "decl": 3, "gloss": "general, emperor", "cite": "imperator, imperatoris, m"},
+    {"key": "imperium", "lemma": "imperium", "gen": "imperii", "gender": "n", "decl": 2, "gloss": "command, empire", "cite": "imperium, imperii, n"},
+    {"key": "incola", "lemma": "incola", "gen": "incolae", "gender": "m", "decl": 1, "gloss": "inhabitant", "cite": "incola, incolae, c"},
+    {"key": "ingenium", "lemma": "ingenium", "gen": "ingenii", "gender": "n", "decl": 2, "gloss": "ability", "cite": "ingenium, ingenii, n"},
+    {"key": "inimicus", "lemma": "inimicus", "gen": "inimici", "gender": "m", "decl": 2, "gloss": "(personal) enemy", "cite": "inimicus, inimici, m"},
+    {"key": "insula", "lemma": "insula", "gen": "insulae", "gender": "f", "decl": 1, "gloss": "island", "cite": "insula, insulae, f"},
+    {"key": "ira", "lemma": "ira", "gen": "irae", "gender": "f", "decl": 1, "gloss": "anger", "cite": "ira, irae, f"},
+    {"key": "italia", "lemma": "Italia", "gen": "Italiae", "gender": "f", "decl": 1, "gloss": "Italy", "cite": "Italia, Italiae, f"},
+    {"key": "iter", "lemma": "iter", "gen": "itineris", "gender": "n", "decl": 3, "gloss": "journey", "cite": "iter, itineris, n"},
+    {"key": "iudex", "lemma": "iudex", "gen": "iudicis", "gender": "m", "decl": 3, "gloss": "judge", "cite": "iudex, iudicis, c"},
+    {"key": "iuppiter", "lemma": "Iuppiter", "gen": "Iovis", "gender": "m", "decl": 3, "gloss": "Jupiter", "cite": "Iuppiter, Iovis, m"},
+    {"key": "iuvenis", "lemma": "iuvenis", "gen": "iuvenis", "gender": "m", "decl": 3, "gloss": "young man", "cite": "iuvenis, iuvenis, m"},
+    {"key": "labor", "lemma": "labor", "gen": "laboris", "gender": "m", "decl": 3, "gloss": "work, task", "cite": "labor, laboris, m"},
+    {"key": "lacrima", "lemma": "lacrima", "gen": "lacrimae", "gender": "f", "decl": 1, "gloss": "tear (cry)", "cite": "lacrima, lacrimae, f"},
+    {"key": "legatus", "lemma": "legatus", "gen": "legati", "gender": "m", "decl": 2, "gloss": "ambassador, legate, officer", "cite": "legatus, legati, m"},
+    {"key": "legio", "lemma": "legio", "gen": "legionis", "gender": "f", "decl": 3, "gloss": "legion", "cite": "legio, legionis, f"},
+    {"key": "leo", "lemma": "leo", "gen": "leonis", "gender": "m", "decl": 3, "gloss": "lion", "cite": "leo, leonis, m"},
+    {"key": "lex", "lemma": "lex", "gen": "legis", "gender": "f", "decl": 3, "gloss": "law", "cite": "lex, legis, f"},
+    {"key": "liber2", "lemma": "liber", "gen": "libri", "gender": "m", "decl": 2, "gloss": "book", "cite": "liber, libri, m"},
+    {"key": "littera", "lemma": "littera", "gen": "litterae", "gender": "f", "decl": 1, "gloss": "letter (of the alphabet); in pl. = letter (which you send to someone)", "cite": "littera, litterae, f"},
+    {"key": "locus", "lemma": "locus", "gen": "loci", "gender": "m", "decl": 2, "gloss": "place", "cite": "locus, loci, m"},
+    {"key": "ludus", "lemma": "ludus", "gen": "ludi", "gender": "m", "decl": 2, "gloss": "school", "cite": "ludus, ludi, m"},
+    {"key": "luna", "lemma": "luna", "gen": "lunae", "gender": "f", "decl": 1, "gloss": "moon", "cite": "luna, lunae, f"},
+    {"key": "lux", "lemma": "lux", "gen": "lucis", "gender": "f", "decl": 3, "gloss": "light", "cite": "lux, lucis, f"},
+    {"key": "magister", "lemma": "magister", "gen": "magistri", "gender": "m", "decl": 2, "gloss": "teacher", "cite": "magister, magistri, m"},
+    {"key": "manus", "lemma": "manus", "gen": "manus", "gender": "f", "decl": 4, "gloss": "hand, band of men", "cite": "manus, manus, f"},
+    {"key": "mare", "lemma": "mare", "gen": "maris", "gender": "n", "decl": 3, "istem": true, "gloss": "sea", "cite": "mare, maris, n"},
+    {"key": "mater", "lemma": "mater", "gen": "matris", "gender": "f", "decl": 3, "gloss": "mother", "cite": "mater, matris, f"},
+    {"key": "matrimonium", "lemma": "matrimonium", "gen": "matrimonii", "gender": "n", "decl": 2, "gloss": "marriage", "cite": "matrimonium, matrimonii, n"},
+    {"key": "mensa", "lemma": "mensa", "gen": "mensae", "gender": "f", "decl": 1, "gloss": "table", "cite": "mensa, mensae, f"},
+    {"key": "miles", "lemma": "miles", "gen": "militis", "gender": "m", "decl": 3, "gloss": "soldier", "cite": "miles, militis, c"},
+    {"key": "modus", "lemma": "modus", "gen": "modi", "gender": "m", "decl": 2, "gloss": "way, manner", "cite": "modus, modi, m"},
+    {"key": "mons", "lemma": "mons", "gen": "montis", "gender": "m", "decl": 3, "istem": true, "gloss": "mountain", "cite": "mons, montis, m"},
+    {"key": "mors", "lemma": "mors", "gen": "mortis", "gender": "f", "decl": 3, "istem": true, "gloss": "death", "cite": "mors, mortis, f"},
+    {"key": "mos", "lemma": "mos", "gen": "moris", "gender": "m", "decl": 3, "gloss": "custom", "cite": "mos, moris, m"},
+    {"key": "murus", "lemma": "murus", "gen": "muri", "gender": "m", "decl": 2, "gloss": "wall", "cite": "murus, muri, m"},
+    {"key": "nauta", "lemma": "nauta", "gen": "nautae", "gender": "m", "decl": 1, "gloss": "sailor", "cite": "nauta, nautae, m"},
+    {"key": "navis", "lemma": "navis", "gen": "navis", "gender": "f", "decl": 3, "istem": true, "gloss": "ship", "cite": "navis, navis, f"},
+    {"key": "nemo", "lemma": "nemo", "gen": "neminis", "gender": "m", "decl": 3, "gloss": "no one", "cite": "nemo, neminis, c"},
+    {"key": "nomen", "lemma": "nomen", "gen": "nominis", "gender": "n", "decl": 3, "gloss": "name", "cite": "nomen, nominis, n"},
+    {"key": "nox", "lemma": "nox", "gen": "noctis", "gender": "f", "decl": 3, "istem": true, "gloss": "night", "cite": "nox, noctis, f"},
+    {"key": "nuntius", "lemma": "nuntius", "gen": "nuntii", "gender": "m", "decl": 2, "gloss": "messenger, message", "cite": "nuntius, nuntii, m"},
+    {"key": "oculus", "lemma": "oculus", "gen": "oculi", "gender": "m", "decl": 2, "gloss": "eye", "cite": "oculus, oculi, m"},
+    {"key": "oppidum", "lemma": "oppidum", "gen": "oppidi", "gender": "n", "decl": 2, "gloss": "town", "cite": "oppidum, oppidi, n"},
+    {"key": "opus", "lemma": "opus", "gen": "operis", "gender": "n", "decl": 3, "gloss": "(piece of) work", "cite": "opus, operis, n"},
+    {"key": "ora", "lemma": "ora", "gen": "orae", "gender": "f", "decl": 1, "gloss": "shore", "cite": "ora, orae, f"},
+    {"key": "oratio", "lemma": "oratio", "gen": "orationis", "gender": "f", "decl": 3, "gloss": "speech", "cite": "oratio, orationis, f"},
+    {"key": "panis", "lemma": "panis", "gen": "panis", "gender": "m", "decl": 3, "istem": true, "gloss": "bread", "cite": "panis, panis, m"},
+    {"key": "parens", "lemma": "parens", "gen": "parentis", "gender": "m", "decl": 3, "istem": true, "gloss": "parent", "cite": "parens, parentis, c"},
+    {"key": "pars", "lemma": "pars", "gen": "partis", "gender": "f", "decl": 3, "istem": true, "gloss": "part", "cite": "pars, partis, f"},
+    {"key": "pater", "lemma": "pater", "gen": "patris", "gender": "m", "decl": 3, "gloss": "father", "cite": "pater, patris, m"},
+    {"key": "patria", "lemma": "patria", "gen": "patriae", "gender": "f", "decl": 1, "gloss": "country, fatherland", "cite": "patria, patriae, f"},
+    {"key": "pax", "lemma": "pax", "gen": "pacis", "gender": "f", "decl": 3, "gloss": "peace", "cite": "pax, pacis, f"},
+    {"key": "pecunia", "lemma": "pecunia", "gen": "pecuniae", "gender": "f", "decl": 1, "gloss": "money", "cite": "pecunia, pecuniae, f"},
+    {"key": "pedes", "lemma": "pedes", "gen": "peditis", "gender": "m", "decl": 3, "gloss": "foot-solider", "cite": "pedes, peditis, m"},
+    {"key": "perfidia", "lemma": "perfidia", "gen": "perfidiae", "gender": "f", "decl": 1, "gloss": "treachery, lie", "cite": "perfidia, perfidiae, f"},
+    {"key": "periculum", "lemma": "periculum", "gen": "periculi", "gender": "n", "decl": 2, "gloss": "danger", "cite": "periculum, periculi, n"},
+    {"key": "pes", "lemma": "pes", "gen": "pedis", "gender": "m", "decl": 3, "gloss": "foot", "cite": "pes, pedis, m"},
+    {"key": "poeta", "lemma": "poeta", "gen": "poetae", "gender": "m", "decl": 1, "gloss": "poet", "cite": "poeta, poetae, m"},
+    {"key": "pons", "lemma": "pons", "gen": "pontis", "gender": "m", "decl": 3, "istem": true, "gloss": "bridge", "cite": "pons, pontis, m"},
+    {"key": "populus", "lemma": "populus", "gen": "populi", "gender": "m", "decl": 2, "gloss": "people, population", "cite": "populus, populi, m"},
+    {"key": "porta", "lemma": "porta", "gen": "portae", "gender": "f", "decl": 1, "gloss": "gate", "cite": "porta, portae, f"},
+    {"key": "portus", "lemma": "portus", "gen": "portus", "gender": "m", "decl": 4, "gloss": "harbour", "cite": "portus, portus, m"},
+    {"key": "praemium", "lemma": "praemium", "gen": "praemii", "gender": "n", "decl": 2, "gloss": "reward", "cite": "praemium, praemii, n"},
+    {"key": "pretium", "lemma": "pretium", "gen": "pretii", "gender": "n", "decl": 2, "gloss": "price", "cite": "pretium, pretii, n"},
+    {"key": "princeps", "lemma": "princeps", "gen": "principis", "gender": "m", "decl": 3, "gloss": "chief, leader", "cite": "princeps, principis, m"},
+    {"key": "proelium", "lemma": "proelium", "gen": "proelii", "gender": "n", "decl": 2, "gloss": "battle", "cite": "proelium, proelii, n"},
+    {"key": "puella", "lemma": "puella", "gen": "puellae", "gender": "f", "decl": 1, "gloss": "girl", "cite": "puella, puellae, f"},
+    {"key": "puer", "lemma": "puer", "gen": "pueri", "gender": "m", "decl": 2, "gloss": "boy", "cite": "puer, pueri, m"},
+    {"key": "pugna", "lemma": "pugna", "gen": "pugnae", "gender": "f", "decl": 1, "gloss": "battle, fight", "cite": "pugna, pugnae, f"},
+    {"key": "regina", "lemma": "regina", "gen": "reginae", "gender": "f", "decl": 1, "gloss": "queen", "cite": "regina, reginae, f"},
+    {"key": "res", "lemma": "res", "gen": "rei", "gender": "f", "decl": 5, "gloss": "thing, affair", "cite": "res, rei, f"},
+    {"key": "rex", "lemma": "rex", "gen": "regis", "gender": "m", "decl": 3, "gloss": "king", "cite": "rex, regis, m"},
+    {"key": "ripa", "lemma": "ripa", "gen": "ripae", "gender": "f", "decl": 1, "gloss": "bank (of a river)", "cite": "ripa, ripae, f"},
+    {"key": "roma", "lemma": "Roma", "gen": "Romae", "gender": "f", "decl": 1, "gloss": "Rome", "cite": "Roma, Romae, f"},
+    {"key": "romanus2", "lemma": "Romanus", "gen": "Romani", "gender": "m", "decl": 2, "gloss": "Roman (noun)", "cite": "Romanus, Romani, m"},
+    {"key": "rus", "lemma": "rus", "gen": "ruris", "gender": "n", "decl": 3, "gloss": "countryside", "cite": "rus, ruris, n"},
+    {"key": "sagitta", "lemma": "sagitta", "gen": "sagittae", "gender": "f", "decl": 1, "gloss": "arrow", "cite": "sagitta, sagittae, f"},
+    {"key": "sapientia", "lemma": "sapientia", "gen": "sapientiae", "gender": "f", "decl": 1, "gloss": "wisdom", "cite": "sapientia, sapientiae, f"},
+    {"key": "saxum", "lemma": "saxum", "gen": "saxi", "gender": "n", "decl": 2, "gloss": "rock", "cite": "saxum, saxi, n"},
+    {"key": "scutum", "lemma": "scutum", "gen": "scuti", "gender": "n", "decl": 2, "gloss": "shield", "cite": "scutum, scuti, n"},
+    {"key": "senex", "lemma": "senex", "gen": "senis", "gender": "m", "decl": 3, "gloss": "old man", "cite": "senex, senis, m"},
+    {"key": "servus", "lemma": "servus", "gen": "servi", "gender": "m", "decl": 2, "gloss": "slave", "cite": "servus, servi, m"},
+    {"key": "signum", "lemma": "signum", "gen": "signi", "gender": "n", "decl": 2, "gloss": "signal, sign", "cite": "signum, signi, n"},
+    {"key": "silva", "lemma": "silva", "gen": "silvae", "gender": "f", "decl": 1, "gloss": "wood, forest", "cite": "silva, silvae, f"},
+    {"key": "socius", "lemma": "socius", "gen": "socii", "gender": "m", "decl": 2, "gloss": "ally", "cite": "socius, socii, m"},
+    {"key": "sol", "lemma": "sol", "gen": "solis", "gender": "m", "decl": 3, "gloss": "sun", "cite": "sol, solis, m"},
+    {"key": "somnium", "lemma": "somnium", "gen": "somnii", "gender": "n", "decl": 2, "gloss": "dream", "cite": "somnium, somnii, n"},
+    {"key": "somnus", "lemma": "somnus", "gen": "somni", "gender": "m", "decl": 2, "gloss": "sleep", "cite": "somnus, somni, m"},
+    {"key": "soror", "lemma": "soror", "gen": "sororis", "gender": "f", "decl": 3, "gloss": "sister", "cite": "soror, sororis, f"},
+    {"key": "taberna", "lemma": "taberna", "gen": "tabernae", "gender": "f", "decl": 1, "gloss": "inn, shop", "cite": "taberna, tabernae, f"},
+    {"key": "telum", "lemma": "telum", "gen": "teli", "gender": "n", "decl": 2, "gloss": "spear, weapon", "cite": "telum, teli, n"},
+    {"key": "tempestas", "lemma": "tempestas", "gen": "tempestatis", "gender": "f", "decl": 3, "gloss": "storm, weather", "cite": "tempestas, tempestatis, f"},
+    {"key": "templum", "lemma": "templum", "gen": "templi", "gender": "n", "decl": 2, "gloss": "temple", "cite": "templum, templi, n"},
+    {"key": "tempus", "lemma": "tempus", "gen": "temporis", "gender": "n", "decl": 3, "gloss": "time", "cite": "tempus, temporis, n"},
+    {"key": "terra", "lemma": "terra", "gen": "terrae", "gender": "f", "decl": 1, "gloss": "land, earth", "cite": "terra, terrae, f"},
+    {"key": "troia", "lemma": "Troia", "gen": "Troiae", "gender": "f", "decl": 1, "gloss": "Troy", "cite": "Troia, Troiae, f"},
+    {"key": "unda", "lemma": "unda", "gen": "undae", "gender": "f", "decl": 1, "gloss": "wave", "cite": "unda, undae, f"},
+    {"key": "urbs", "lemma": "urbs", "gen": "urbis", "gender": "f", "decl": 3, "istem": true, "gloss": "city", "cite": "urbs, urbis, f"},
+    {"key": "uxor", "lemma": "uxor", "gen": "uxoris", "gender": "f", "decl": 3, "gloss": "wife", "cite": "uxor, uxoris, f"},
+    {"key": "ventus", "lemma": "ventus", "gen": "venti", "gender": "m", "decl": 2, "gloss": "wind", "cite": "ventus, venti, m"},
+    {"key": "verbum", "lemma": "verbum", "gen": "verbi", "gender": "n", "decl": 2, "gloss": "word", "cite": "verbum, verbi, n"},
+    {"key": "vestis", "lemma": "vestis", "gen": "vestis", "gender": "f", "decl": 3, "istem": true, "gloss": "clothing", "cite": "vestis, vestis, f"},
+    {"key": "via", "lemma": "via", "gen": "viae", "gender": "f", "decl": 1, "gloss": "road, street, way", "cite": "via, viae, f"},
+    {"key": "villa", "lemma": "villa", "gen": "villae", "gender": "f", "decl": 1, "gloss": "villa", "cite": "villa, villae, f"},
+    {"key": "vir", "lemma": "vir", "gen": "viri", "gender": "m", "decl": 2, "gloss": "man", "cite": "vir, viri, m"},
+    {"key": "virtus", "lemma": "virtus", "gen": "virtutis", "gender": "f", "decl": 3, "gloss": "courage", "cite": "virtus, virtutis, f"},
+    {"key": "vita", "lemma": "vita", "gen": "vitae", "gender": "f", "decl": 1, "gloss": "life", "cite": "vita, vitae, f"},
+    {"key": "vox", "lemma": "vox", "gen": "vocis", "gender": "f", "decl": 3, "gloss": "voice", "cite": "vox, vocis, f"},
+    {"key": "vulnus", "lemma": "vulnus", "gen": "vulneris", "gender": "n", "decl": 3, "gloss": "wound", "cite": "vulnus, vulneris, n"}
   ],
   adjectives: [
-    { key:"bonus", type:"adj1", m:"bonus", f:"bona", n:"bonum", gloss:"good" },
-    { key:"magnus", type:"adj1", m:"magnus", f:"magna", n:"magnum", gloss:"great, large" },
-    { key:"pulcher", type:"adj1", m:"pulcher", f:"pulchra", n:"pulchrum", gloss:"beautiful" },
-    { key:"miser", type:"adj1", m:"miser", f:"misera", n:"miserum", gloss:"wretched" },
-    { key:"fortis", type:"adj3", nom:{m:"fortis",f:"fortis",n:"forte"}, stem:"fort", gloss:"brave, strong" },
-    { key:"omnis", type:"adj3", nom:{m:"omnis",f:"omnis",n:"omne"}, stem:"omn", gloss:"all, every" },
-    { key:"acer", type:"adj3", nom:{m:"ācer",f:"ācris",n:"ācre"}, stem:"ācr", gloss:"sharp, keen" },
-    { key:"felix", type:"adj3", nom:{m:"fēlīx",f:"fēlīx",n:"fēlīx"}, stem:"fēlīc", gloss:"lucky, happy" },
-    { key:"ingens", type:"adj3", nom:{m:"ingēns",f:"ingēns",n:"ingēns"}, stem:"ingent", gloss:"huge" },
-    { key:"facilis", type:"adj3", nom:{m:"facilis",f:"facilis",n:"facile"}, stem:"facil", gloss:"easy" }
+    {"key": "alienus", "type": "adj1", "m": "alienus", "f": "aliena", "n": "alienum", "gloss": "of another, belonging to another, foreign", "cite": "alienus, aliena, alienum"},
+    {"key": "altus", "type": "adj1", "m": "altus", "f": "alta", "n": "altum", "gloss": "deep, high", "cite": "altus, alta, altum"},
+    {"key": "audax", "type": "adj3", "nom": {"m": "audax", "f": "audax", "n": "audax"}, "stem": "audac", "gloss": "bold", "cite": "audax, audacis"},
+    {"key": "barbarus", "type": "adj1", "m": "barbarus", "f": "barbara", "n": "barbarum", "gloss": "barbarian (adjective)", "cite": "barbarus, barbara, barbarum"},
+    {"key": "bonus", "type": "adj1", "m": "bonus", "f": "bona", "n": "bonum", "gloss": "good", "cite": "bonus, bona, bonum"},
+    {"key": "brevis", "type": "adj3", "nom": {"m": "brevis", "f": "brevis", "n": "breve"}, "stem": "brev", "gloss": "short, brief", "cite": "brevis, breve"},
+    {"key": "carus", "type": "adj1", "m": "carus", "f": "cara", "n": "carum", "gloss": "dear", "cite": "carus, cara, carum"},
+    {"key": "celer", "type": "adj3", "nom": {"m": "celer", "f": "celeris", "n": "celere"}, "stem": "celer", "gloss": "swift, quick", "cite": "celer, celeris, celere"},
+    {"key": "clarus", "type": "adj1", "m": "clarus", "f": "clara", "n": "clarum", "gloss": "famous", "cite": "clarus, clara, clarum"},
+    {"key": "crudelis", "type": "adj3", "nom": {"m": "crudelis", "f": "crudelis", "n": "crudele"}, "stem": "crudel", "gloss": "cruel", "cite": "crudelis, crudele"},
+    {"key": "dexter", "type": "adj1", "m": "dexter", "f": "dextra", "n": "dextrum", "gloss": "right (as opposed to left)", "cite": "dexter, dextra, dextrum"},
+    {"key": "difficilis", "type": "adj3", "nom": {"m": "difficilis", "f": "difficilis", "n": "difficile"}, "stem": "difficil", "gloss": "difficult", "cite": "difficilis, difficile"},
+    {"key": "diligens", "type": "adj3", "nom": {"m": "diligens", "f": "diligens", "n": "diligens"}, "stem": "diligent", "gloss": "careful", "cite": "diligens, diligentis"},
+    {"key": "dulcis", "type": "adj3", "nom": {"m": "dulcis", "f": "dulcis", "n": "dulce"}, "stem": "dulc", "gloss": "charming, pleasant", "cite": "dulcis, dulce"},
+    {"key": "durus", "type": "adj1", "m": "durus", "f": "dura", "n": "durum", "gloss": "hard", "cite": "durus, dura, durum"},
+    {"key": "facilis", "type": "adj3", "nom": {"m": "facilis", "f": "facilis", "n": "facile"}, "stem": "facil", "gloss": "easy", "cite": "facilis, facile"},
+    {"key": "felix", "type": "adj3", "nom": {"m": "felix", "f": "felix", "n": "felix"}, "stem": "felic", "gloss": "fortunate, favourable, happy", "cite": "felix, felicis"},
+    {"key": "fessus", "type": "adj1", "m": "fessus", "f": "fessa", "n": "fessum", "gloss": "tired", "cite": "fessus, fessa, fessum"},
+    {"key": "fidelis", "type": "adj3", "nom": {"m": "fidelis", "f": "fidelis", "n": "fidele"}, "stem": "fidel", "gloss": "faithful", "cite": "fidelis, fidele"},
+    {"key": "fortis", "type": "adj3", "nom": {"m": "fortis", "f": "fortis", "n": "forte"}, "stem": "fort", "gloss": "brave, strong", "cite": "fortis, forte"},
+    {"key": "gravis", "type": "adj3", "nom": {"m": "gravis", "f": "gravis", "n": "grave"}, "stem": "grav", "gloss": "heavy, serious", "cite": "gravis, grave"},
+    {"key": "ingens", "type": "adj3", "nom": {"m": "ingens", "f": "ingens", "n": "ingens"}, "stem": "ingent", "gloss": "huge", "cite": "ingens, ingentis"},
+    {"key": "iratus", "type": "adj1", "m": "iratus", "f": "irata", "n": "iratum", "gloss": "angry", "cite": "iratus, irata, iratum"},
+    {"key": "laetus", "type": "adj1", "m": "laetus", "f": "laeta", "n": "laetum", "gloss": "happy", "cite": "laetus, laeta, laetum"},
+    {"key": "liber", "type": "adj1", "m": "liber", "f": "libera", "n": "liberum", "gloss": "free", "cite": "liber, libera, liberum"},
+    {"key": "longus", "type": "adj1", "m": "longus", "f": "longa", "n": "longum", "gloss": "long", "cite": "longus, longa, longum"},
+    {"key": "magnus", "type": "adj1", "m": "magnus", "f": "magna", "n": "magnum", "gloss": "big, great", "cite": "magnus, magna, magnum"},
+    {"key": "malus", "type": "adj1", "m": "malus", "f": "mala", "n": "malum", "gloss": "bad", "cite": "malus, mala, malum"},
+    {"key": "medius", "type": "adj1", "m": "medius", "f": "media", "n": "medium", "gloss": "middle (of)", "cite": "medius, media, medium"},
+    {"key": "miser", "type": "adj1", "m": "miser", "f": "misera", "n": "miserum", "gloss": "wretched", "cite": "miser, misera, miserum"},
+    {"key": "mortuus", "type": "adj1", "m": "mortuus", "f": "mortua", "n": "mortuum", "gloss": "dead", "cite": "mortuus, mortua, mortuum"},
+    {"key": "multus", "type": "adj1", "m": "multus", "f": "multa", "n": "multum", "gloss": "much, many", "cite": "multus, multa, multum"},
+    {"key": "niger", "type": "adj1", "m": "niger", "f": "nigra", "n": "nigrum", "gloss": "black", "cite": "niger, nigra, nigrum"},
+    {"key": "noster", "type": "adj1", "m": "noster", "f": "nostra", "n": "nostrum", "gloss": "our", "cite": "noster, nostra, nostrum"},
+    {"key": "notus", "type": "adj1", "m": "notus", "f": "nota", "n": "notum", "gloss": "well-known", "cite": "notus, nota, notum"},
+    {"key": "omnis", "type": "adj3", "nom": {"m": "omnis", "f": "omnis", "n": "omne"}, "stem": "omn", "gloss": "every, all", "cite": "omnis, omne"},
+    {"key": "parvus", "type": "adj1", "m": "parvus", "f": "parva", "n": "parvum", "gloss": "small", "cite": "parvus, parva, parvum"},
+    {"key": "pulcher", "type": "adj1", "m": "pulcher", "f": "pulchra", "n": "pulchrum", "gloss": "beautiful", "cite": "pulcher, pulchra, pulchrum"},
+    {"key": "punicus", "type": "adj1", "m": "Punicus", "f": "Punica", "n": "Punicum", "gloss": "Carthaginian (adj.)", "cite": "Punicus, Punica, Punicum"},
+    {"key": "rectus", "type": "adj1", "m": "rectus", "f": "recta", "n": "rectum", "gloss": "right (as opposed to wrong)", "cite": "rectus, recta, rectum"},
+    {"key": "romanus", "type": "adj1", "m": "Romanus", "f": "Romana", "n": "Romanum", "gloss": "Roman (adj.)", "cite": "Romanus, Romana, Romanum"},
+    {"key": "sacer", "type": "adj1", "m": "sacer", "f": "sacra", "n": "sacrum", "gloss": "sacred", "cite": "sacer, sacra, sacrum"},
+    {"key": "saevus", "type": "adj1", "m": "saevus", "f": "saeva", "n": "saevum", "gloss": "savage", "cite": "saevus, saeva, saevum"},
+    {"key": "sapiens", "type": "adj3", "nom": {"m": "sapiens", "f": "sapiens", "n": "sapiens"}, "stem": "sapient", "gloss": "wise", "cite": "sapiens, sapientis"},
+    {"key": "sinister", "type": "adj1", "m": "sinister", "f": "sinistra", "n": "sinistrum", "gloss": "left", "cite": "sinister, sinistra, sinistrum"},
+    {"key": "stultus", "type": "adj1", "m": "stultus", "f": "stulta", "n": "stultum", "gloss": "foolish", "cite": "stultus, stulta, stultum"},
+    {"key": "summus", "type": "adj1", "m": "summus", "f": "summa", "n": "summum", "gloss": "top (of)", "cite": "summus, summa, summum"},
+    {"key": "superbus", "type": "adj1", "m": "superbus", "f": "superba", "n": "superbum", "gloss": "proud", "cite": "superbus, superba, superbum"},
+    {"key": "talis", "type": "adj3", "nom": {"m": "talis", "f": "talis", "n": "tale"}, "stem": "tal", "gloss": "such", "cite": "talis, tale"},
+    {"key": "tantus", "type": "adj1", "m": "tantus", "f": "tanta", "n": "tantum", "gloss": "so great", "cite": "tantus, tanta, tantum"},
+    {"key": "tristis", "type": "adj3", "nom": {"m": "tristis", "f": "tristis", "n": "triste"}, "stem": "trist", "gloss": "sad, gloomy", "cite": "tristis, triste"},
+    {"key": "tutus", "type": "adj1", "m": "tutus", "f": "tuta", "n": "tutum", "gloss": "safe", "cite": "tutus, tuta, tutum"},
+    {"key": "vester", "type": "adj1", "m": "vester", "f": "vestra", "n": "vestrum", "gloss": "your (pl.)", "cite": "vester, vestra, vestrum"}
   ],
   pronouns: ["ego","tu","se","is","hic","ille","ipse","qui","quis"],
   verbs: [
-    { key:"amo", pp:["amō","amāre","amāvī","amātum"], conj:1, gloss:"love" },
-    { key:"porto", pp:["portō","portāre","portāvī","portātum"], conj:1, gloss:"carry" },
-    { key:"moneo", pp:["moneō","monēre","monuī","monitum"], conj:2, gloss:"warn, advise" },
-    { key:"video", pp:["videō","vidēre","vīdī","vīsum"], conj:2, gloss:"see" },
-    { key:"rego", pp:["regō","regere","rēxī","rēctum"], conj:3, gloss:"rule" },
-    { key:"duco", pp:["dūcō","dūcere","dūxī","ductum"], conj:3, gloss:"lead" },
-    { key:"capio", pp:["capiō","capere","cēpī","captum"], conj:"3io", gloss:"take, capture" },
-    { key:"facio", pp:["faciō","facere","fēcī","factum"], conj:"3io", gloss:"make, do" },
-    { key:"audio", pp:["audiō","audīre","audīvī","audītum"], conj:4, gloss:"hear" },
-    { key:"venio", pp:["veniō","venīre","vēnī","ventum"], conj:4, gloss:"come" },
-    { key:"sequor", pp:["sequor","sequī","secūtus sum","secūtum"], conj:3, deponent:true, gloss:"follow" },
-    { key:"hortor", pp:["hortor","hortārī","hortātus sum","hortātum"], conj:1, deponent:true, gloss:"urge, encourage" },
-    { key:"sum", irregular:SUM, gloss:"be" },
-    { key:"possum", irregular:POSSUM, gloss:"be able, can" },
-    { key:"eo", irregular:EO, gloss:"go" },
-    { key:"fero", irregular:FERO, gloss:"bring, bear" },
-    { key:"volo", irregular:VOLO, gloss:"want, wish" },
-    { key:"nolo", irregular:NOLO, gloss:"not want, be unwilling" },
-    { key:"malo", irregular:MALO, gloss:"prefer" },
-    { key:"fio", irregular:FIO, gloss:"become, be made" }
+    {"key": "accuso", "pp": ["accuso", "accusare", "accusavi", "accusatum"], "conj": 1, "gloss": "I accuse", "cite": "accuso, accusare, accusavi, accusatum"},
+    {"key": "adiuvo", "pp": ["adiuvo", "adiuvare", "adiuvi", "adiutum"], "conj": 1, "gloss": "I help", "cite": "adiuvo, adiuvare, adiuvi, adiutum"},
+    {"key": "advenio", "pp": ["advenio", "advenire", "adveni", "adventum"], "conj": 4, "gloss": "I arrive", "cite": "advenio, advenire, adveni, adventum"},
+    {"key": "aedifico", "pp": ["aedifico", "aedificare", "aedificavi", "aedificatum"], "conj": 1, "gloss": "I build", "cite": "aedifico, aedificare, aedificavi, aedificatum"},
+    {"key": "aggredior", "pp": ["aggredior", "aggredi", "aggressus sum", "aggressum"], "conj": "3io", "deponent": true, "gloss": "I attack", "cite": "aggredior, aggredi, aggressus sum"},
+    {"key": "ago", "pp": ["ago", "agere", "egi", "actum"], "conj": 3, "gloss": "I do/drive/compel", "cite": "ago, agere, egi, actum"},
+    {"key": "ambulo", "pp": ["ambulo", "ambulare", "ambulavi", "ambulatum"], "conj": 1, "gloss": "I walk", "cite": "ambulo, ambulare, ambulavi, ambulatum"},
+    {"key": "amo", "pp": ["amo", "amare", "amavi", "amatum"], "conj": 1, "gloss": "I love, like", "cite": "amo, amare, amavi, amatum"},
+    {"key": "aperio", "pp": ["aperio", "aperire", "aperui", "apertum"], "conj": 4, "gloss": "I open", "cite": "aperio, aperire, aperui, apertum"},
+    {"key": "appello", "pp": ["appello", "appellare", "appellavi", "appellatum"], "conj": 1, "gloss": "I call", "cite": "appello, appellare, appellavi, appellatum"},
+    {"key": "ascendo", "pp": ["ascendo", "ascendere", "ascendi", "ascensum"], "conj": 3, "gloss": "I climb, board", "cite": "ascendo, ascendere, ascendi, ascensum"},
+    {"key": "audio", "pp": ["audio", "audire", "audivi", "auditum"], "conj": 4, "gloss": "I hear, listen to", "cite": "audio, audire, audivi, auditum"},
+    {"key": "bibo", "pp": ["bibo", "bibere", "bibi", ""], "conj": 3, "gloss": "I drink", "cite": "bibo, bibere, bibi, -"},
+    {"key": "cado", "pp": ["cado", "cadere", "cecidi", "casum"], "conj": 3, "gloss": "I fall", "cite": "cado, cadere, cecidi, casum"},
+    {"key": "canto", "pp": ["canto", "cantare", "cantavi", "cantatum"], "conj": 1, "gloss": "I sing", "cite": "canto, cantare, cantavi, cantatum"},
+    {"key": "capio", "pp": ["capio", "capere", "cepi", "captum"], "conj": "3io", "gloss": "I take, capture, seize", "cite": "capio, capere, cepi, captum"},
+    {"key": "celo", "pp": ["celo", "celare", "celavi", "celatum"], "conj": 1, "gloss": "I hide", "cite": "celo, celare, celavi, celatum"},
+    {"key": "clamo", "pp": ["clamo", "clamare", "clamavi", "clamatum"], "conj": 1, "gloss": "I shout", "cite": "clamo, clamare, clamavi, clamatum"},
+    {"key": "claudo", "pp": ["claudo", "claudere", "clausi", "clausum"], "conj": 3, "gloss": "I close", "cite": "claudo, claudere, clausi, clausum"},
+    {"key": "cognosco", "pp": ["cognosco", "cognoscere", "cognovi", "cognitum"], "conj": 3, "gloss": "I learn, find out, recognise", "cite": "cognosco, cognoscere, cognovi, cognitum"},
+    {"key": "cogo", "pp": ["cogo", "cogere", "coegi", "coactum"], "conj": 3, "gloss": "I compel, force", "cite": "cogo, cogere, coegi, coactum"},
+    {"key": "conficio", "pp": ["conficio", "conficere", "confeci", "confectum"], "conj": "3io", "gloss": "I complete", "cite": "conficio, conficere, confeci, confectum"},
+    {"key": "conor", "pp": ["conor", "conari", "conatus sum", "conatum"], "conj": 1, "deponent": true, "gloss": "I try", "cite": "conor, conari, conatus sum"},
+    {"key": "constituo", "pp": ["constituo", "constituere", "constitui", "constitutum"], "conj": 3, "gloss": "I decide, establish", "cite": "constituo, constituere, constitui, constitutum"},
+    {"key": "contendo", "pp": ["contendo", "contendere", "contendi", "contentum"], "conj": 3, "gloss": "I hurry, march, strive", "cite": "contendo, contendere, contendi, contentum"},
+    {"key": "convenio", "pp": ["convenio", "convenire", "conveni", "conventum"], "conj": 4, "gloss": "I come together", "cite": "convenio, convenire, conveni, conventum"},
+    {"key": "cupio", "pp": ["cupio", "cupere", "cupivi", "cupitum"], "conj": "3io", "gloss": "I want, desire", "cite": "cupio, cupere, cupivi, cupitum"},
+    {"key": "curo", "pp": ["curo", "curare", "curavi", "curatum"], "conj": 1, "gloss": "I care for", "cite": "curo, curare, curavi, curatum"},
+    {"key": "curro", "pp": ["curro", "currere", "cucurri", "cursum"], "conj": 3, "gloss": "I run", "cite": "curro, currere, cucurri, cursum"},
+    {"key": "debeo", "pp": ["debeo", "debere", "debui", "debitum"], "conj": 2, "gloss": "I ought, owe", "cite": "debeo, debere, debui, debitum"},
+    {"key": "defendo", "pp": ["defendo", "defendere", "defendi", "defensum"], "conj": 3, "gloss": "I defend", "cite": "defendo, defendere, defendi, defensum"},
+    {"key": "delecto", "pp": ["delecto", "delectare", "delectavi", "delectatum"], "conj": 1, "gloss": "I delight, please", "cite": "delecto, delectare, delectavi, delectatum"},
+    {"key": "deleo", "pp": ["deleo", "delere", "delevi", "deletum"], "conj": 2, "gloss": "I destroy", "cite": "deleo, delere, delevi, deletum"},
+    {"key": "descendo", "pp": ["descendo", "descendere", "descendi", "descensum"], "conj": 3, "gloss": "I go down, disembark", "cite": "descendo, descendere, descendi, descensum"},
+    {"key": "despero", "pp": ["despero", "desperare", "desperavi", "desperatum"], "conj": 1, "gloss": "I despair", "cite": "despero, desperare, desperavi, desperatum"},
+    {"key": "dico", "pp": ["dico", "dicere", "dixi", "dictum"], "conj": 3, "gloss": "I say", "cite": "dico, dicere, dixi, dictum"},
+    {"key": "discedo", "pp": ["discedo", "discedere", "discessi", "discessum"], "conj": 3, "gloss": "I depart", "cite": "discedo, discedere, discessi, discessum"},
+    {"key": "disco", "pp": ["disco", "discere", "didici", ""], "conj": 3, "gloss": "I learn", "cite": "disco, discere, didici, -"},
+    {"key": "do", "pp": ["do", "dare", "dedi", "datum"], "conj": 1, "gloss": "I give", "cite": "do, dare, dedi, datum"},
+    {"key": "doceo", "pp": ["doceo", "docere", "docui", "doctum"], "conj": 2, "gloss": "I teach", "cite": "doceo, docere, docui, doctum"},
+    {"key": "doleo", "pp": ["doleo", "dolere", "dolui", "dolitum"], "conj": 2, "gloss": "I feel pain, am sad", "cite": "doleo, dolere, dolui, dolitum"},
+    {"key": "dormio", "pp": ["dormio", "dormire", "dormivi", "dormitum"], "conj": 4, "gloss": "I sleep", "cite": "dormio, dormire, dormivi, dormitum"},
+    {"key": "duco", "pp": ["duco", "ducere", "duxi", "ductum"], "conj": 3, "gloss": "I lead", "cite": "duco, ducere, duxi, ductum"},
+    {"key": "effugio", "pp": ["effugio", "effugere", "effugi", ""], "conj": "3io", "gloss": "I secape", "cite": "effugio, effugere, effugi, -"},
+    {"key": "egredior", "pp": ["egredior", "egredi", "egressus sum", "egressum"], "conj": "3io", "deponent": true, "gloss": "I go out", "cite": "egredior, egredi, egressus sum"},
+    { "key":"eo", "irregular":IRREGULAR_VERBS["eo"], "gloss":"I go", "cite":"eo, ire, ii, itum" },
+    {"key": "erro", "pp": ["erro", "errare", "erravi", "erratum"], "conj": 1, "gloss": "I wander", "cite": "erro, errare, erravi, erratum"},
+    {"key": "exspecto", "pp": ["exspecto", "exspectare", "exspectavi", "exspectatum"], "conj": 1, "gloss": "I wait for", "cite": "exspecto, exspectare, exspectavi, exspectatum"},
+    {"key": "facio", "pp": ["facio", "facere", "feci", "factum"], "conj": "3io", "gloss": "I do, make", "cite": "facio, facere, feci, factum"},
+    { "key":"fero", "irregular":IRREGULAR_VERBS["fero"], "gloss":"I carry, bear", "cite":"fero, ferre, tuli, latum" },
+    {"key": "festino", "pp": ["festino", "festinare", "festinavi", "festinatum"], "conj": 1, "gloss": "I hurry", "cite": "festino, festinare, festinavi, festinatum"},
+    {"key": "fleo", "pp": ["fleo", "flere", "flevi", "fletum"], "conj": 2, "gloss": "I weep", "cite": "fleo, flere, flevi, fletum"},
+    {"key": "frango", "pp": ["frango", "frangere", "fregi", "fractum"], "conj": 3, "gloss": "I break", "cite": "frango, frangere, fregi, fractum"},
+    {"key": "fugio", "pp": ["fugio", "fugere", "fugi", ""], "conj": "3io", "gloss": "I flee", "cite": "fugio, fugere, fugi, -"},
+    {"key": "gero", "pp": ["gero", "gerere", "gessi", "gestum"], "conj": 3, "gloss": "I manage, wage, wear", "cite": "gero, gerere, gessi, gestum"},
+    {"key": "habeo", "pp": ["habeo", "habere", "habui", "habitum"], "conj": 2, "gloss": "I have", "cite": "habeo, habere, habui, habitum"},
+    {"key": "habito", "pp": ["habito", "habitare", "habitavi", "habitatum"], "conj": 1, "gloss": "I live, inhabit", "cite": "habito, habitare, habitavi, habitatum"},
+    {"key": "hortor", "pp": ["hortor", "hortari", "hortatus sum", "hortatum"], "conj": 1, "deponent": true, "gloss": "I encourage, urge", "cite": "hortor, hortari, hortatus sum"},
+    {"key": "iaceo", "pp": ["iaceo", "iacere", "iacui", "iacitum"], "conj": 2, "gloss": "I lie (down)", "cite": "iaceo, iacere, iacui, iacitum"},
+    {"key": "iacio", "pp": ["iacio", "iacere", "ieci", "iactum"], "conj": "3io", "gloss": "I throw", "cite": "iacio, iacere, ieci, iactum"},
+    {"key": "incendo", "pp": ["incendo", "incendere", "incendi", "incensum"], "conj": 3, "gloss": "I burn, set alight", "cite": "incendo, incendere, incendi, incensum"},
+    {"key": "incipio", "pp": ["incipio", "incipere", "incepi", "inceptum"], "conj": "3io", "gloss": "I begin", "cite": "incipio, incipere, incepi, inceptum"},
+    {"key": "intellego", "pp": ["intellego", "intellegere", "intellexi", "intellectum"], "conj": 3, "gloss": "I understand", "cite": "intellego, intellegere, intellexi, intellectum"},
+    {"key": "neco", "pp": ["neco", "necare", "necavi", "necatum"], "conj": 1, "gloss": "I kill", "cite": "neco, necare, necavi, necatum"},
+    {"key": "intro", "pp": ["intro", "intrare", "intravi", "intratum"], "conj": 1, "gloss": "I enter", "cite": "intro, intrare, intravi, intratum"},
+    {"key": "invenio", "pp": ["invenio", "invenire", "inveni", "inventum"], "conj": 4, "gloss": "I find", "cite": "invenio, invenire, inveni, inventum"},
+    {"key": "iubeo", "pp": ["iubeo", "iubere", "iussi", "iussum"], "conj": 2, "gloss": "I order", "cite": "iubeo, iubere, iussi, iussum"},
+    {"key": "laboro", "pp": ["laboro", "laborare", "laboravi", "laboratum"], "conj": 1, "gloss": "I work", "cite": "laboro, laborare, laboravi, laboratum"},
+    {"key": "laudo", "pp": ["laudo", "laudare", "laudavi", "laudatum"], "conj": 1, "gloss": "I praise", "cite": "laudo, laudare, laudavi, laudatum"},
+    {"key": "lego", "pp": ["lego", "legere", "legi", "lectum"], "conj": 3, "gloss": "I read, choose", "cite": "lego, legere, legi, lectum"},
+    {"key": "libero", "pp": ["libero", "liberare", "liberavi", "liberatum"], "conj": 1, "gloss": "I free", "cite": "libero, liberare, liberavi, liberatum"},
+    {"key": "loquor", "pp": ["loquor", "loqui", "locutus sum", "locutum"], "conj": 3, "deponent": true, "gloss": "I speak", "cite": "loquor, loqui, locutus sum"},
+    {"key": "ludo", "pp": ["ludo", "ludere", "lusi", "lusum"], "conj": 3, "gloss": "I play", "cite": "ludo, ludere, lusi, lusum"},
+    {"key": "maneo", "pp": ["maneo", "manere", "mansi", "mansum"], "conj": 2, "gloss": "I remain", "cite": "maneo, manere, mansi, mansum"},
+    {"key": "miror", "pp": ["miror", "mirari", "miratus sum", "miratum"], "conj": 1, "deponent": true, "gloss": "I wonder at, am amazed at", "cite": "miror, mirari, miratus sum"},
+    {"key": "mitto", "pp": ["mitto", "mittere", "misi", "missum"], "conj": 3, "gloss": "I send", "cite": "mitto, mittere, misi, missum"},
+    {"key": "moneo", "pp": ["moneo", "monere", "monui", "monitum"], "conj": 2, "gloss": "I warn, advise", "cite": "moneo, monere, monui, monitum"},
+    {"key": "morior", "pp": ["morior", "mori", "mortuus sum", "mortuum"], "conj": "3io", "deponent": true, "gloss": "I die", "cite": "morior, mori, mortuus sum"},
+    {"key": "moror", "pp": ["moror", "morari", "moratus sum", "moratum"], "conj": 1, "deponent": true, "gloss": "I delay", "cite": "moror, morari, moratus sum"},
+    {"key": "moveo", "pp": ["moveo", "movere", "movi", "motum"], "conj": 2, "gloss": "I move", "cite": "moveo, movere, movi, motum"},
+    {"key": "narro", "pp": ["narro", "narrare", "narravi", "narratum"], "conj": 1, "gloss": "I tell, narrate", "cite": "narro, narrare, narravi, narratum"},
+    {"key": "nascor", "pp": ["nascor", "nasci", "natus sum", "natum"], "conj": 3, "deponent": true, "gloss": "I am born", "cite": "nascor, nasci, natus sum"},
+    {"key": "navigo", "pp": ["navigo", "navigare", "navigavi", "navigatum"], "conj": 1, "gloss": "I sail", "cite": "navigo, navigare, navigavi, navigatum"},
+    {"key": "nescio", "pp": ["nescio", "nescire", "nescivi", "nescitum"], "conj": 4, "gloss": "I do not know", "cite": "nescio, nescire, nescivi, nescitum"},
+    {"key": "nuntio", "pp": ["nuntio", "nuntiare", "nuntiavi", "nuntiatum"], "conj": 1, "gloss": "I report, announce", "cite": "nuntio, nuntiare, nuntiavi, nuntiatum"},
+    {"key": "occupo", "pp": ["occupo", "occupare", "occupavi", "occupatum"], "conj": 1, "gloss": "I occupy, seize", "cite": "occupo, occupare, occupavi, occupatum"},
+    {"key": "oppugno", "pp": ["oppugno", "oppugnare", "oppugnavi", "oppugnatum"], "conj": 1, "gloss": "I attack, storm", "cite": "oppugno, oppugnare, oppugnavi, oppugnatum"},
+    {"key": "orior", "pp": ["orior", "oriri", "ortus sum", "ortum"], "conj": 4, "deponent": true, "gloss": "I arise", "cite": "orior, oriri, ortus sum"},
+    {"key": "oro", "pp": ["oro", "orare", "oravi", "oratum"], "conj": 1, "gloss": "I beg, pray", "cite": "oro, orare, oravi, oratum"},
+    {"key": "ostendo", "pp": ["ostendo", "ostendere", "ostendi", "ostensum/ostentum"], "conj": 3, "gloss": "I show", "cite": "ostendo, ostendere, ostendi, ostensum/ostentum"},
+    {"key": "pario", "pp": ["pario", "parere", "peperi", "partum"], "conj": "3io", "gloss": "I produce, (of victories) I win", "cite": "pario, parere, peperi, partum"},
+    {"key": "paro", "pp": ["paro", "parare", "paravi", "paratum"], "conj": 1, "gloss": "prepare", "cite": "paro, parare, paravi, paratum"},
+    {"key": "pello", "pp": ["pello", "pellere", "pepuli", "pulsum"], "conj": 3, "gloss": "I drive, push", "cite": "pello, pellere, pepuli, pulsum"},
+    {"key": "peto", "pp": ["peto", "petere", "petivi", "petitum"], "conj": 3, "gloss": "I seek, make for", "cite": "peto, petere, petivi, petitum"},
+    {"key": "pono", "pp": ["pono", "ponere", "posui", "positum"], "conj": 3, "gloss": "I put, place, pitch (a camp)", "cite": "pono, ponere, posui, positum"},
+    {"key": "porto", "pp": ["porto", "portare", "portavi", "portatum"], "conj": 1, "gloss": "I carry", "cite": "porto, portare, portavi, portatum"},
+    { "key":"possum", "irregular":IRREGULAR_VERBS["possum"], "gloss":"I am able", "cite":"possum, posse, potui, -" },
+    {"key": "proficiscor", "pp": ["proficiscor", "proficisci", "profectus sum", "profectum"], "conj": 3, "deponent": true, "gloss": "I set out", "cite": "proficiscor, proficisci, profectus sum"},
+    {"key": "progredior", "pp": ["progredior", "progredi", "progressus sum", "progressum"], "conj": "3io", "deponent": true, "gloss": "I go forward, advance", "cite": "progredior, progredi, progressus sum"},
+    {"key": "promitto", "pp": ["promitto", "promittere", "promisi", "promissum"], "conj": 3, "gloss": "I promise", "cite": "promitto, promittere, promisi, promissum"},
+    {"key": "pugno", "pp": ["pugno", "pugnare", "pugnavi", "pugnatum"], "conj": 1, "gloss": "I fight", "cite": "pugno, pugnare, pugnavi, pugnatum"},
+    {"key": "punio", "pp": ["punio", "punire", "punivi", "punitum"], "conj": 4, "gloss": "I punish", "cite": "punio, punire, punivi, punitum"},
+    {"key": "puto", "pp": ["puto", "putare", "putavi", "putatum"], "conj": 1, "gloss": "I think", "cite": "puto, putare, putavi, putatum"},
+    {"key": "quaero", "pp": ["quaero", "quaerere", "quaesivi", "quaesitum"], "conj": 3, "gloss": "I ask, seek", "cite": "quaero, quaerere, quaesivi, quaesitum"},
+    {"key": "reddo", "pp": ["reddo", "reddere", "reddidi", "redditum"], "conj": 3, "gloss": "I return, give back", "cite": "reddo, reddere, reddidi, redditum"},
+    {"key": "reduco", "pp": ["reduco", "reducere", "reduxi", "reductum"], "conj": 3, "gloss": "I lead back", "cite": "reduco, reducere, reduxi, reductum"},
+    {"key": "rego", "pp": ["rego", "regere", "rexi", "rectum"], "conj": 3, "gloss": "I rule", "cite": "rego, regere, rexi, rectum"},
+    {"key": "regredior", "pp": ["regredior", "regredi", "regressus sum", "regressum"], "conj": "3io", "deponent": true, "gloss": "I go back", "cite": "regredior, regredi, regressus sum"},
+    {"key": "relinquo", "pp": ["relinquo", "relinquere", "reliqui", "relictum"], "conj": 3, "gloss": "I leave, abandon", "cite": "relinquo, relinquere, reliqui, relictum"},
+    {"key": "respondeo", "pp": ["respondeo", "respondere", "respondi", "responsum"], "conj": 2, "gloss": "I reply, answer", "cite": "respondeo, respondere, respondi, responsum"},
+    {"key": "revenio", "pp": ["revenio", "revenire", "reveni", "reventum"], "conj": 4, "gloss": "I come back, return", "cite": "revenio, revenire, reveni, reventum"},
+    {"key": "rideo", "pp": ["rideo", "ridere", "risi", "risum"], "conj": 2, "gloss": "I laugh, smile", "cite": "rideo, ridere, risi, risum"},
+    {"key": "rogo", "pp": ["rogo", "rogare", "rogavi", "rogatum"], "conj": 1, "gloss": "I ask", "cite": "rogo, rogare, rogavi, rogatum"},
+    {"key": "ruo", "pp": ["ruo", "ruere", "rui", "rutum"], "conj": 3, "gloss": "I rush", "cite": "ruo, ruere, rui, rutum"},
+    {"key": "saluto", "pp": ["saluto", "salutare", "salutavi", "salutatum"], "conj": 1, "gloss": "I greet", "cite": "saluto, salutare, salutavi, salutatum"},
+    {"key": "scio", "pp": ["scio", "scire", "scivi", "scitum"], "conj": 4, "gloss": "I know", "cite": "scio, scire, scivi, scitum"},
+    {"key": "scribo", "pp": ["scribo", "scribere", "scripsi", "scriptum"], "conj": 3, "gloss": "I write", "cite": "scribo, scribere, scripsi, scriptum"},
+    {"key": "sedeo", "pp": ["sedeo", "sedere", "sedi", "sessum"], "conj": 2, "gloss": "I sit", "cite": "sedeo, sedere, sedi, sessum"},
+    {"key": "sequor", "pp": ["sequor", "sequi", "secutus sum", "secutum"], "conj": 3, "deponent": true, "gloss": "I follow", "cite": "sequor, sequi, secutus sum"},
+    {"key": "servo", "pp": ["servo", "servare", "servavi", "servatum"], "conj": 1, "gloss": "I save", "cite": "servo, servare, servavi, servatum"},
+    {"key": "specto", "pp": ["specto", "spectare", "spectavi", "spectatum"], "conj": 1, "gloss": "I watch", "cite": "specto, spectare, spectavi, spectatum"},
+    {"key": "sto", "pp": ["sto", "stare", "steti", "statum"], "conj": 1, "gloss": "I stand", "cite": "sto, stare, steti, statum"},
+    { "key":"sum", "irregular":IRREGULAR_VERBS["sum"], "gloss":"I am", "cite":"sum, esse, fui, -" },
+    {"key": "supero", "pp": ["supero", "superare", "superavi", "superatum"], "conj": 1, "gloss": "I overcome, conquer", "cite": "supero, superare, superavi, superatum"},
+    {"key": "surgo", "pp": ["surgo", "surgere", "surrexi", "surrectum"], "conj": 3, "gloss": "I rise, get up", "cite": "surgo, surgere, surrexi, surrectum"},
+    {"key": "tango", "pp": ["tango", "tangere", "tetigi", "tactum"], "conj": 3, "gloss": "I touch", "cite": "tango, tangere, tetigi, tactum"},
+    {"key": "teneo", "pp": ["teneo", "tenere", "tenui", "tentum"], "conj": 2, "gloss": "I hold", "cite": "teneo, tenere, tenui, tentum"},
+    {"key": "terreo", "pp": ["terreo", "terrere", "terrui", "territum"], "conj": 2, "gloss": "I terrify", "cite": "terreo, terrere, terrui, territum"},
+    {"key": "trado", "pp": ["trado", "tradere", "tradidi", "traditum"], "conj": 3, "gloss": "I hand over", "cite": "trado, tradere, tradidi, traditum"},
+    {"key": "traho", "pp": ["traho", "trahere", "traxi", "tractum"], "conj": 3, "gloss": "I drag", "cite": "traho, trahere, traxi, tractum"},
+    {"key": "venio", "pp": ["venio", "venire", "veni", "ventum"], "conj": 4, "gloss": "I come", "cite": "venio, venire, veni, ventum"},
+    {"key": "vereor", "pp": ["vereor", "vereri", "veritus sum", "veritum"], "conj": 2, "deponent": true, "gloss": "I fear (deponent)", "cite": "vereor, vereri, veritus sum"},
+    {"key": "verto", "pp": ["verto", "vertere", "verti", "versum"], "conj": 3, "gloss": "I turn", "cite": "verto, vertere, verti, versum"},
+    {"key": "video", "pp": ["video", "videre", "vidi", "visum"], "conj": 2, "gloss": "I see", "cite": "video, videre, vidi, visum"},
+    {"key": "videor", "pp": ["videor", "videri", "visus sum", "visum"], "conj": 2, "deponent": true, "gloss": "I seem", "cite": "videor, videri, visus sum"},
+    {"key": "vinco", "pp": ["vinco", "vincere", "vici", "victum"], "conj": 3, "gloss": "I conquer", "cite": "vinco, vincere, vici, victum"},
+    {"key": "vito", "pp": ["vito", "vitare", "vitavi", "vitatum"], "conj": 1, "gloss": "I avoid", "cite": "vito, vitare, vitavi, vitatum"},
+    {"key": "vulnero", "pp": ["vulnero", "vulnerare", "vulneravi", "vulneratum"], "conj": 1, "gloss": "I wound", "cite": "vulnero, vulnerare, vulneravi, vulneratum"}
   ]
 };
 
@@ -1132,6 +1461,18 @@ const Cloud = {
 const N = window;  // engine globals live on window
 const LEX = N.LEXICON;
 
+/* Display is macron-free (matches the vocabulary deck and VCE convention).
+   Wrap every engine accessor so all generated forms come back without macrons. */
+function deepStripMac(o){
+  if(o==null) return o;
+  if(typeof o==="string") return stripMacrons(o);
+  if(Array.isArray(o)) return o.map(deepStripMac);
+  if(typeof o==="object"){ const r={}; for(const k in o) r[k]=deepStripMac(o[k]); return r; }
+  return o;
+}
+["declineNoun","declineAdj1","declineAdj3","declineComparative","comparisonOf","makeAdverb","declinePronoun","conjugateVerb"]
+  .forEach(fn=>{ const orig=N[fn]; if(typeof orig==="function") N[fn]=(...a)=>deepStripMac(orig.apply(null,a)); });
+
 const state = {
   view: "home",
   user: null,                 // {uid, displayName, role}
@@ -1179,27 +1520,33 @@ function categoryWeight(category){
 /* ---------------------------------------------------------------------------
    4. scope catalogue  (what each module can quiz; user-selectable)
 --------------------------------------------------------------------------- */
+const lexNounKeys = d => LEX.nouns.filter(n=>n.decl===d).map(n=>n.key);
+const lexVerbConj = c => LEX.verbs.filter(v=>!v.irregular && !v.deponent && v.conj===c).map(v=>v.key);
+const lexVerbDep  = () => LEX.verbs.filter(v=>v.deponent).map(v=>v.key);
+const lexVerbIrr  = () => LEX.verbs.filter(v=>v.irregular).map(v=>v.key);
+const lexAdj      = t => LEX.adjectives.filter(a=>a.type===t).map(a=>a.key);
+
 const SCOPE = {
   decline: {
     label:"Noun declension",
     groups:[
-      { id:"d1", label:"1st declension", keys:["puella","poeta"] },
-      { id:"d2", label:"2nd declension", keys:["dominus","puer","ager","filius","bellum"] },
-      { id:"d3", label:"3rd declension", keys:["rex","miles","civis","urbs","corpus","nomen","mare"] },
-      { id:"d4", label:"4th declension", keys:["exercitus","manus","cornu"] },
-      { id:"d5", label:"5th declension", keys:["res","dies"] }
+      { id:"d1", label:"1st declension", keys:lexNounKeys(1) },
+      { id:"d2", label:"2nd declension", keys:lexNounKeys(2) },
+      { id:"d3", label:"3rd declension", keys:lexNounKeys(3) },
+      { id:"d4", label:"4th declension", keys:lexNounKeys(4) },
+      { id:"d5", label:"5th declension", keys:lexNounKeys(5) }
     ]
   },
   conjugate: {
     label:"Verb conjugation",
     groups:[
-      { id:"c1", label:"1st conjugation", keys:["amo","porto"] },
-      { id:"c2", label:"2nd conjugation", keys:["moneo","video"] },
-      { id:"c3", label:"3rd conjugation", keys:["rego","duco"] },
-      { id:"cio", label:"3rd-io", keys:["capio","facio"] },
-      { id:"c4", label:"4th conjugation", keys:["audio","venio"] },
-      { id:"cdep", label:"Deponents", keys:["sequor","hortor"] },
-      { id:"cirr", label:"Irregular verbs", keys:["sum","possum","eo","fero","volo","nolo","malo","fio"] }
+      { id:"c1", label:"1st conjugation", keys:lexVerbConj(1) },
+      { id:"c2", label:"2nd conjugation", keys:lexVerbConj(2) },
+      { id:"c3", label:"3rd conjugation", keys:lexVerbConj(3) },
+      { id:"cio", label:"Mixed conjugation", keys:lexVerbConj("3io") },
+      { id:"c4", label:"4th conjugation", keys:lexVerbConj(4) },
+      { id:"cdep", label:"Deponents", keys:lexVerbDep() },
+      { id:"cirr", label:"Irregular verbs", keys:lexVerbIrr() }
     ],
     tenseGroups:[
       { id:"tpres", label:"Present system (pres/impf/fut)", tenses:["present","imperfect","future"] },
@@ -1211,8 +1558,8 @@ const SCOPE = {
   adjadv: {
     label:"Adjectives & adverbs",
     groups:[
-      { id:"a1", label:"1st/2nd-declension adjectives", keys:["bonus","magnus","pulcher","miser"] },
-      { id:"a3", label:"3rd-declension adjectives", keys:["fortis","omnis","acer","felix","ingens","facilis"] }
+      { id:"a1", label:"1st/2nd-declension adjectives", keys:lexAdj("adj1") },
+      { id:"a3", label:"3rd-declension adjectives", keys:lexAdj("adj3") }
     ],
     tasks:[
       { id:"tdec", label:"Decline (agreement)" },
@@ -1222,10 +1569,19 @@ const SCOPE = {
   },
   pronoun: {
     label:"Pronouns",
-    groups:[ { id:"pall", label:"All pronouns", keys:["ego","tu","se","is","hic","ille","ipse","qui","quis"] } ]
+    groups:[
+      { id:"ego", label:"ego", keys:["ego"] },
+      { id:"tu", label:"tu", keys:["tu"] },
+      { id:"se", label:"sui (reflexive)", keys:["se"] },
+      { id:"is", label:"is, ea, id", keys:["is"] },
+      { id:"hic", label:"hic, haec, hoc", keys:["hic"] },
+      { id:"ille", label:"ille, illa, illud", keys:["ille"] },
+      { id:"ipse", label:"ipse, ipsa, ipsum", keys:["ipse"] },
+      { id:"qui", label:"qui, quae, quod", keys:["qui"] },
+      { id:"quis", label:"quis, quid", keys:["quis"] }
+    ]
   },
   parse: { label:"Parsing (form → analysis)", usesModule:true },
-  syntax: { label:"Syntax identification" },
   translate: { label:"Translation (self-marked)" }
 };
 const TENSE_LABEL = { present:"present", imperfect:"imperfect", future:"future", perfect:"perfect", pluperfect:"pluperfect", futurePerfect:"future perfect" };
@@ -1288,7 +1644,7 @@ function genDecline(sel){
   return {
     kind:"produce", category:"decline:"+e.decl, itemKey:`decline:${key}:${cas}:${num}`,
     eyebrow:`Decline · ${ordinalDecl(e.decl)} declension`,
-    prompt:`Give the <b>${N.CASE_LABEL[cas]} ${NUM_LABEL[num]}</b> of <span class="lat">${e.lemma}, ${e.gen}</span> <span class="muted">(${e.gloss})</span>`,
+    prompt:`Give the <b>${N.CASE_LABEL[cas]} ${NUM_LABEL[num]}</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span>`,
     answer, lemma:e, caseHi:{cas,num}, paradigm:()=>paradigmNoun(e,{cas,num})
   };
 }
@@ -1311,7 +1667,7 @@ function genConjugate(sel){
   return {
     kind:"produce", category:"conjugate:"+(e.irregular?"irr":e.conj), itemKey:`conj:${e.key}:${sl.tense}:${sl.mood}:${sl.voice}:${sl.person}:${sl.number}`,
     eyebrow:`Conjugate · ${verbConjLabel(e)}`,
-    prompt:`Give the <b>${ORD[sl.person]} ${NUM_LABEL[sl.number]} ${TENSE_LABEL[sl.tense]} ${sl.mood} ${voiceTxt}</b> of <span class="lat">${e.pp?e.pp[0]:e.key}</span> <span class="muted">(${e.gloss})</span>`,
+    prompt:`Give the <b>${ORD[sl.person]} ${NUM_LABEL[sl.number]} ${TENSE_LABEL[sl.tense]} ${sl.mood} ${voiceTxt}</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span>`,
     answer, lemma:e, paradigm:()=>paradigmVerbCell(e, sl)
   };
 }
@@ -1379,7 +1735,7 @@ function genParse(sel){
     const forms = Object.keys(idx); const form = rand(forms);
     return { kind:"parseVerb", category:"parse:verb", itemKey:`parsev:${e.key}:${form}`,
       eyebrow:`Parse · verb`, form, analyses:idx[form], lemma:e,
-      prompt:`Parse this form of <span class="lat">${e.pp?e.pp[0]:e.key}</span> <span class="muted">(${e.gloss})</span>:`,
+      prompt:`Parse this form of <span class="lat">${e.cite||(e.pp?e.pp[0]:e.key)}</span> <span class="muted">(${e.gloss})</span>:`,
       paradigm:()=>null };
   }
   // nominal parse: nouns / adjectives / pronouns
@@ -1402,54 +1758,8 @@ function genParse(sel){
   return { kind:"parseNominal", category:"parse:nominal", itemKey:`parsen:${lemma.key}:${form}`,
     eyebrow:`Parse · ${sub==="adjadv"?"adjective":sub==="pronoun"?"pronoun":"noun"}`,
     form, analyses:idx[form], hasGender, lemma,
-    prompt:`Parse this form of <span class="lat">${lemma.lemma||pronCitation(lemma.key)}</span> <span class="muted">(${lemma.gloss||""})</span>:`,
+    prompt:`Parse this form of <span class="lat">${lemma.cite||lemma.lemma||pronCitation(lemma.key)}</span> <span class="muted">(${lemma.gloss||""})</span>:`,
     paradigm:()=>null };
-}
-
-/* ---- syntax identification (curated) ---- */
-const SYNTAX_BANK = [
-  { lat:"Urbe captā, mīlitēs domum revertērunt.", gloss:"With the city captured, the soldiers returned home.",
-    answer:"Ablative absolute", note:"Noun + perfect participle in the ablative, grammatically detached from the main clause." },
-  { lat:"Caesar dīxit hostēs venīre.", gloss:"Caesar said that the enemy were coming.",
-    answer:"Indirect statement", note:"Verb of speaking + accusative subject (hostēs) + infinitive (venīre)." },
-  { lat:"Vēnit ut rēgem vidēret.", gloss:"He came in order to see the king.",
-    answer:"Purpose clause", note:"ut + imperfect subjunctive expressing intention." },
-  { lat:"Tam fortis erat ut nēmō eum vinceret.", gloss:"He was so brave that no one could defeat him.",
-    answer:"Result clause", note:"tam … ut + subjunctive expressing consequence." },
-  { lat:"Cum haec dīxisset, discessit.", gloss:"When he had said these things, he departed.",
-    answer:"Cum clause (circumstantial)", note:"cum + pluperfect subjunctive giving the circumstances of the main verb." },
-  { lat:"Imperāvit eīs ut fugerent.", gloss:"He ordered them to flee.",
-    answer:"Indirect command", note:"Verb of commanding + ut + subjunctive." },
-  { lat:"Haec urbs cēpienda est.", gloss:"This city must be captured.",
-    answer:"Gerundive of obligation", note:"Gerundive + esse (passive periphrastic) expressing necessity." },
-  { lat:"Gladiō hostem occīdit.", gloss:"He killed the enemy with a sword.",
-    answer:"Ablative of means", note:"Bare ablative (gladiō) naming the instrument." },
-  { lat:"Mīlitibus urbs dēfendenda est.", gloss:"The city must be defended by the soldiers.",
-    answer:"Dative of agent", note:"Dative (mīlitibus) of the agent with a passive periphrastic." },
-  { lat:"Vir quem vīdī erat rēx.", gloss:"The man whom I saw was the king.",
-    answer:"Relative clause", note:"Relative pronoun (quem) agreeing with its antecedent vir." },
-  { lat:"Rēgem moritūrum vīdimus.", gloss:"We saw the king about to die.",
-    answer:"Future participle", note:"-ūrus participle expressing imminent action." },
-  { lat:"Mīles ā duce laudātus est.", gloss:"The soldier was praised by the general.",
-    answer:"Ablative of agent", note:"ā/ab + ablative (ā duce) with a passive verb." },
-  { lat:"Puer patrī similis est.", gloss:"The boy is like his father.",
-    answer:"Dative with adjective", note:"similis governs the dative (patrī)." },
-  { lat:"Tribus diēbus vēnit.", gloss:"He came within three days.",
-    answer:"Ablative of time within which", note:"Bare ablative (tribus diēbus) measuring the period." },
-  { lat:"Rōmae mānsit.", gloss:"He remained at Rome.",
-    answer:"Locative", note:"Rōmae is the locative case naming the place where." },
-  { lat:"Hortātus mīlitēs, signum dedit.", gloss:"Having encouraged the soldiers, he gave the signal.",
-    answer:"Perfect participle (deponent)", note:"hortātus, deponent perfect participle, active in sense." }
-];
-const SYNTAX_OPTIONS = Array.from(new Set(SYNTAX_BANK.map(s=>s.answer)));
-function genSyntax(){
-  const q = rand(SYNTAX_BANK);
-  const distract = shuffle(SYNTAX_OPTIONS.filter(o=>o!==q.answer)).slice(0,3);
-  const options = shuffle([q.answer, ...distract]);
-  return { kind:"mcq", category:"syntax", itemKey:`syntax:${q.lat}`,
-    eyebrow:"Syntax · identify the construction",
-    prompt:`<span class="lat">${q.lat}</span><br><span class="muted">${q.gloss}</span>`,
-    options, answer:q.answer, note:q.note };
 }
 
 /* ---- translation (self-marked) ---- */
@@ -1467,7 +1777,7 @@ function genTranslate(){
   const q = rand(TRANSLATE_BANK);
   return { kind:"selfmark", category:"translate", itemKey:`tr:${q.lat}`,
     eyebrow:"Translate · self-marked",
-    prompt:`<span class="lat">${q.lat}</span>`, model:q.model };
+    prompt:`<span class="lat">${stripMacrons(q.lat)}</span>`, model:stripMacrons(q.model) };
 }
 
 function generate(session){
@@ -1478,7 +1788,6 @@ function generate(session){
     case "adjadv": return genAdjAdv(sel);
     case "pronoun": return genPronoun(sel);
     case "parse": return genParse(sel);
-    case "syntax": return genSyntax();
     case "translate": return genTranslate();
   }
 }
@@ -1504,7 +1813,7 @@ function caseTable(rowsByNum, hi){
 }
 function paradigmNoun(e, hi){
   const d = N.declineNoun(e);
-  return wrapPara(`${e.lemma}, ${e.gen} — ${GEN_LABEL[e.gender]}, ${ordinalDecl(e.decl)} declension`, caseTable(d, hi));
+  return wrapPara(`${e.cite} — ${ordinalDecl(e.decl)} declension`, caseTable(d, hi));
 }
 function paradigmAdj(e,g,hi){
   const d = e.type==="adj1"?N.declineAdj1(e.m,e.f,e.n):N.declineAdj3(e.nom,e.stem);
@@ -1545,16 +1854,16 @@ function paradigmVerbCell(e, sl){
     });
     t.appendChild(tr);
   }
-  const head = `${e.pp?e.pp[0]:e.key} — ${TENSE_LABEL[sl.tense]} ${sl.mood} ${e.deponent?"(deponent)":sl.voice}`;
+  const head = `${e.cite||(e.pp?e.pp[0]:e.key)} — ${TENSE_LABEL[sl.tense]} ${sl.mood} ${e.deponent?"(deponent)":sl.voice}`;
   return wrapPara(head, t);
 }
 function chip(label, val){ return el("div",{class:"degchip"}, el("span",{class:"deg"},label), el("span",{class:"lat"},val)); }
 function wrapPara(title, node){ const w=el("div",{}); w.appendChild(el("div",{class:"para-title"}, title)); w.appendChild(node); return w; }
 
 function ordinalDecl(d){ return ["","1st","2nd","3rd","4th","5th"][d]; }
-function verbConjLabel(e){ if(e.irregular) return "irregular"; if(e.conj==="3io") return "3rd-io"+(e.deponent?" deponent":""); return e.conj+(e.conj===1?"st":e.conj===2?"nd":e.conj===3?"rd":"th")+" conj."+(e.deponent?" deponent":""); }
-function adjCitation(e){ return e.type==="adj1" ? `${e.m}, ${e.f}, ${e.n}` : `${e.nom.m}, ${e.nom.f}, ${e.nom.n}`; }
-function pronCitation(key){ const map={ego:"ego",tu:"tū",se:"suī (reflexive)",is:"is, ea, id",hic:"hic, haec, hoc",ille:"ille, illa, illud",ipse:"ipse, ipsa, ipsum",qui:"quī, quae, quod",quis:"quis, quid"}; return map[key]||key; }
+function verbConjLabel(e){ if(e.irregular) return "irregular"; if(e.conj==="3io") return "mixed conj."+(e.deponent?" deponent":""); return e.conj+(e.conj===1?"st":e.conj===2?"nd":e.conj===3?"rd":"th")+" conj."+(e.deponent?" deponent":""); }
+function adjCitation(e){ return e.cite || (e.type==="adj1" ? `${e.m}, ${e.f}, ${e.n}` : `${e.nom.m}, ${e.nom.f}, ${e.nom.n}`); }
+function pronCitation(key){ const map={ego:"ego",tu:"tu",se:"sui (reflexive)",is:"is, ea, id",hic:"hic, haec, hoc",ille:"ille, illa, illud",ipse:"ipse, ipsa, ipsum",qui:"qui, quae, quod",quis:"quis, quid"}; return map[key]||key; }
 
 /* ---------------------------------------------------------------------------
    8. rendering — shell + router
@@ -1637,9 +1946,9 @@ const DEFAULT_SCOPE = {
   decline:{groups:["d1","d2","d3"]},
   conjugate:{groups:["c1","c2","c3"],tenses:["tpres"],moods:["mind"],voices:["vact"]},
   adjadv:{groups:["a1","a3"],tasks:["tdec","tcomp","tadv"]},
-  pronoun:{groups:["pall"]},
+  pronoun:{groups:["ego","tu","se","is","hic","ille","ipse","qui","quis"]},
   parse:{parseModule:"decline",groups:["d1","d2","d3"]},
-  syntax:{}, translate:{}
+  translate:{}
 };
 const setupChoice = { module:"decline", scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)), mode:"practice" };
 
@@ -1752,7 +2061,7 @@ function renderDrill(main){
       el("button",{class:"linklike", onclick:endSession}, "end")));
 
   const panel = el("section",{class:"tablet"});
-  panel.appendChild(el("div",{class:"tablet-eyebrow"}, "rogātiō"));
+  panel.appendChild(el("div",{class:"tablet-eyebrow"}, "rogatio"));
   panel.appendChild(el("div",{class:"prompt", html:q.prompt}));
 
   const answerArea = el("div",{class:"answerArea"});
@@ -1798,11 +2107,12 @@ function renderDrill(main){
   main.appendChild(head);
   main.appendChild(panel);
 
-  // paradigm reference (collapsible) for morphology questions
+  // paradigm reference — revealed only after the question is answered
   if(q.paradigm){
     const para = q.paradigm();
     if(para){
-      const det = el("details",{class:"reference"});
+      const det = el("details",{class:"reference", id:"paradigmRef", style: s.answered ? "" : "display:none"});
+      if(s.answered) det.open = true;
       det.appendChild(el("summary",{}, "Paradigm reference"));
       det.appendChild(para);
       main.appendChild(det);
@@ -1825,6 +2135,7 @@ function submitProduce(q,input,feedback,submitBtn){
   submitBtn.textContent="Next"; submitBtn.onclick=advance;
   feedback.innerHTML="";
   feedback.appendChild(verdictLine(verdict, q.answer));
+  revealParadigm();
   endOrContinue(s);
 }
 function verdictLine(verdict, answer){
@@ -1833,6 +2144,7 @@ function verdictLine(verdict, answer){
   return el("div",{class:"vline err"}, el("b",{},"Not quite."), el("span",{}," The answer is "), el("span",{class:"lat"}, answer));
 }
 function advance(){ const s=state.session; if(s.done){ renderApp(); return; } nextQuestion(); renderApp(); }
+function revealParadigm(){ const p=document.getElementById("paradigmRef"); if(p){ p.style.display=""; p.open=true; } }
 
 function parseSelectors(q){
   const node = el("div",{class:"parsegrid"});
@@ -1871,6 +2183,7 @@ function submitParse(q,sel,feedback,submitBtn){
     el("span",{}, q.analyses.map(describeAnalysis).join("  ·  "))));
   submitBtn.textContent="Next"; submitBtn.onclick=advance;
   for(const k in sel.sels) sel.sels[k].disabled=true;
+  revealParadigm();
   endOrContinue(s);
 }
 function describeAnalysis(a){
@@ -1902,7 +2215,7 @@ function endSession(){ const s=state.session; if(!s) return setView("home"); s.d
 function renderSummary(main){
   const s=state.session; const pct = s.n? Math.round(100*s.correct/s.n):0;
   main.appendChild(el("section",{class:"card summary"},
-    el("p",{class:"eyebrow"},"Cōnfectum"),
+    el("p",{class:"eyebrow"},"Confectum"),
     el("h2",{class:"display"}, `${s.correct} / ${s.n} correct`),
     el("div",{class:"bigpct"}, pct+"%"),
     el("div",{class:"summbtns"},
@@ -1924,7 +2237,7 @@ function renderProgress(main){
   const prog = DB.progress(state.user.uid);
   const acc = prog.totalSeen? Math.round(100*prog.totalCorrect/prog.totalSeen):0;
   main.appendChild(el("section",{class:"hero compact"},
-    el("p",{class:"eyebrow"},"Ratiō"),
+    el("p",{class:"eyebrow"},"Ratio"),
     el("h1",{class:"display"},"Your progress"),
     el("div",{class:"herostats"},
       stat(acc+"%","lifetime accuracy"), stat(prog.streak||0,"day streak"),
@@ -2020,7 +2333,7 @@ function renderTeacher(main){
     const subs = attempts.filter(t=>t.assignmentId===a.id);
     const avg = subs.length? Math.round(subs.reduce((s,t)=>s+t.pct,0)/subs.length):null;
     ca.appendChild(el("div",{class:"classrow"},
-      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module].label} · ${a.count} Q · ${cls?cls.name:"—"}`)),
+      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${a.count} Q · ${cls?cls.name:"—"}`)),
       el("span",{class:"muted small"}, subs.length? `${subs.length} submitted · avg ${avg}%` : "no submissions")));
   });
   main.appendChild(ca);
@@ -2085,7 +2398,7 @@ function renderStudent(main){
     const done = attempts.filter(t=>t.assignmentId===a.id && (t.studentName||me.displayName)===me.displayName);
     const best = done.length? Math.max(...done.map(t=>t.pct)):null;
     ac.appendChild(el("div",{class:"classrow"},
-      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module].label} · ${a.count} Q`)),
+      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${a.count} Q`)),
       el("div",{},
         best!=null? el("span",{class:"muted small"}, `best ${best}%  `) : null,
         el("button",{class:"primary small", onclick:()=>startAssignment(a)}, done.length?"Retry":"Start"))));
