@@ -1135,7 +1135,7 @@ const LEX = N.LEXICON;
 const state = {
   view: "home",
   user: null,                 // {uid, displayName, role}
-  settings: { requireMacrons:false, theme:"light", quizCount:15 },
+  settings: { theme:"light", quizCount:15 },
   session: null               // active drill session
 };
 
@@ -1647,15 +1647,11 @@ function renderHome(main){
   main.innerHTML = "";
   const prog = DB.progress(state.user.uid);
   const acc = prog.totalSeen ? Math.round(100*prog.totalCorrect/prog.totalSeen) : 0;
-  main.appendChild(el("section",{class:"hero"},
-    el("p",{class:"eyebrow"},"Ad fontēs"),
-    el("h1",{class:"display"},"Drill the grammar until the forms are automatic."),
-    el("div",{class:"herostats"},
-      stat(dueCount(), "due for review"),
-      stat(prog.streak||0, "day streak"),
-      stat(acc+"%", "lifetime accuracy"),
-      stat(prog.totalSeen||0, "answered"))
-  ));
+  main.appendChild(el("div",{class:"herostats", style:"border-top:none; padding-top:0; margin-top:0; margin-bottom:28px"},
+    stat(dueCount(), "due for review"),
+    stat(prog.streak||0, "day streak"),
+    stat(acc+"%", "lifetime accuracy"),
+    stat(prog.totalSeen||0, "answered")));
 
   const card = el("section",{class:"card setup"});
   card.appendChild(el("h2",{class:"cardh"},"New drill"));
@@ -1673,11 +1669,6 @@ function renderHome(main){
     modeRow.appendChild(el("button",{class:"choice"+(setupChoice.mode===v?" sel":""), onclick:()=>{ setupChoice.mode=v; renderHome(main); }}, l));
   });
   card.appendChild(field("Mode", modeRow));
-  // macron setting
-  const macWrap = el("label",{class:"toggle"},
-    el("input",{type:"checkbox", checked: state.settings.requireMacrons?"checked":null, onchange:(e)=>{ state.settings.requireMacrons=e.target.checked; persistSettings(); }}),
-    el("span",{}, "Require macrons (mark vowel length as wrong if missing)"));
-  card.appendChild(field("Marking", macWrap));
 
   card.appendChild(el("button",{class:"primary big", onclick:startSession}, "Begin"));
   main.appendChild(card);
@@ -1690,8 +1681,8 @@ function scopeControls(module, main){
   const box = el("div",{class:"scope"});
   if(module==="syntax" || module==="translate"){
     box.appendChild(el("p",{class:"muted small"}, module==="syntax"
-      ? "Identify the dominant construction in each sentence. Sixteen seed sentences; edit SYNTAX_BANK to add your set texts."
-      : "Read, translate, then reveal the model and mark yourself. Eight seed sentences; edit TRANSLATE_BANK to add your own."));
+      ? "Identify the dominant construction in each sentence."
+      : "Read each sentence, translate it, then reveal the model and mark yourself."));
     return field("Scope", box);
   }
   if(module==="parse"){
@@ -1769,10 +1760,8 @@ function renderDrill(main){
 
   if(q.kind==="produce"){
     const input = el("input",{class:"answer-input lat", type:"text", autocomplete:"off", autocapitalize:"off", spellcheck:"false", placeholder:"type the form…"});
-    const tool = macronToolbar(input);
     const submit = el("button",{class:"primary", onclick:()=>submitProduce(q,input,feedback,submit)}, "Check");
     input.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); if(!s.answered) submitProduce(q,input,feedback,submit); else advance(); } });
-    answerArea.appendChild(tool);
     answerArea.appendChild(el("div",{class:"inputrow"}, input, submit));
     setTimeout(()=>input.focus(),30);
   }
@@ -1822,25 +1811,12 @@ function renderDrill(main){
   main.appendChild(caseKey());
 }
 
-function macronToolbar(input){
-  const bar = el("div",{class:"macrons"});
-  ["ā","ē","ī","ō","ū"].forEach(ch=>{
-    bar.appendChild(el("button",{class:"mac", type:"button", tabindex:"-1", onclick:()=>insertAtCursor(input,ch)}, ch));
-  });
-  bar.appendChild(el("span",{class:"machint small muted"}, "Alt + vowel also works"));
-  input.addEventListener("keydown",(e)=>{
-    if(e.altKey){ const m={a:"ā",e:"ē",i:"ī",o:"ō",u:"ū"}[e.key.toLowerCase()]; if(m){ e.preventDefault(); insertAtCursor(input,m); } }
-  });
-  return bar;
-}
-function insertAtCursor(input,ch){
-  const s=input.selectionStart, e=input.selectionEnd, v=input.value;
-  input.value = v.slice(0,s)+ch+v.slice(e); input.selectionStart=input.selectionEnd=s+ch.length; input.focus();
-}
+function macronToolbar(){ return null; }
+
 
 function submitProduce(q,input,feedback,submitBtn){
   const s=state.session; if(s.answered) return;
-  const verdict = gradeForm(input.value, q.answer, state.settings.requireMacrons);
+  const verdict = gradeForm(input.value, q.answer, false);
   const correct = verdict==="correct";
   s.answered=true;
   recordResult(q.itemKey, q.category, correct);
@@ -1990,7 +1966,7 @@ function renderClass(main){
   if(!FIREBASE_ENABLED){
     main.appendChild(el("div",{class:"banner"},
       el("b",{},"Local mode. "),
-      "Accounts, cross-device sync and live student monitoring activate once Firebase config is added (see the build notes). Below works locally for one user; the same screens populate with real class data when the backend is connected."));
+      "Accounts, cross-device sync and live student monitoring are active once the app is connected to its backend. Until then this view works locally for a single user."));
   }
   if(state.user.role==="teacher"){
     if(Cloud.active && !state._teacherSynced){ state._teacherSynced=true; Cloud.refreshTeacher().then(()=>renderApp()); }
