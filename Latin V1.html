@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LVDVS — VCE Latin trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E7E3D6; --surface:#F3EFE4; --surface-2:#FBF8EF; --ink:#22201A; --muted:#6E6557;
+  --line:#CFC7B4; --accent:#2F6F5E; --accent-deep:#234F44; --ok:#2E6F4E; --err:#9A2B27; --brass:#A07B33;
+  --hi:#EFE2C2;
+  --c-nom:#2F6F5E; --c-voc:#6F8F2F; --c-gen:#A07B33; --c-dat:#B5683C; --c-acc:#9A2B27; --c-abl:#4A5E86;
+  --serif:"EB Garamond",Georgia,"Times New Roman",serif;
+  --display:"Cinzel",var(--serif); --ui:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --maxw:880px;
+}
+[data-theme="dark"]{
+  --paper:#15130E; --surface:#1E1B14; --surface-2:#262117; --ink:#ECE6D6; --muted:#9A9486;
+  --line:#332E22; --accent:#5AA890; --accent-deep:#4C8F7A; --ok:#5FA77A; --err:#D07A6F; --brass:#C9A24E;
+  --hi:#3A3220;
+  --c-nom:#6FBFA6; --c-voc:#A7C66B; --c-gen:#D4AA55; --c-dat:#D08A5E; --c-acc:#D87B72; --c-abl:#8197C2;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper); color:var(--ink); font-family:var(--ui); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+.lat{font-family:var(--serif); font-feature-settings:"liga" 1; letter-spacing:.1px;}
+button{font-family:inherit; cursor:pointer}
+code{font-family:ui-monospace,Menlo,Consolas,monospace}
+
+/* ---- top bar ---- */
+.topbar{display:flex; align-items:center; gap:20px; padding:14px 22px; border-bottom:1px solid var(--line);
+  background:var(--surface); position:sticky; top:0; z-index:5; flex-wrap:wrap;}
+.brand{display:flex; flex-direction:column; line-height:1; margin-right:auto}
+.wordmark{font-family:var(--display); font-weight:600; font-size:26px; letter-spacing:.18em;}
+.tagline{font-size:11px; color:var(--muted); letter-spacing:.16em; text-transform:uppercase; margin-top:3px}
+.nav{display:flex; gap:4px}
+.navbtn{background:none; border:1px solid transparent; color:var(--muted); padding:7px 14px; border-radius:8px;
+  font-size:13px; font-weight:500; letter-spacing:.02em;}
+.navbtn:hover{color:var(--ink)}
+.navbtn.active{color:var(--ink); background:var(--surface-2); border-color:var(--line)}
+.acct{display:flex; align-items:center; gap:12px}
+.who{font-size:12px; color:var(--muted)}
+.linklike{background:none; border:none; color:var(--accent); font-size:12px; text-decoration:underline; padding:2px}
+.iconbtn{background:var(--surface-2); border:1px solid var(--line); border-radius:8px; width:34px; height:30px; color:var(--ink); font-size:14px}
+
+/* ---- layout ---- */
+.main{max-width:var(--maxw); margin:0 auto; padding:30px 22px 80px}
+.eyebrow{font-family:var(--display); font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); margin:0 0 10px}
+.display{font-family:var(--display); font-weight:500; line-height:1.15; margin:0}
+h1.display{font-size:clamp(24px,3.4vw,34px)}
+.hero{margin-bottom:30px}
+.hero.compact{margin-bottom:20px}
+.herostats{display:flex; gap:30px; flex-wrap:wrap; margin-top:22px; padding-top:20px; border-top:1px solid var(--line)}
+.stat{display:flex; flex-direction:column}
+.statn{font-family:var(--serif); font-size:30px; font-weight:600; line-height:1}
+.statl{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:6px}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:24px; margin-bottom:22px}
+.cardh{font-family:var(--display); font-weight:500; font-size:18px; margin:0 0 18px; letter-spacing:.02em}
+
+/* ---- setup ---- */
+.fieldrow{display:grid; grid-template-columns:120px 1fr; gap:16px; align-items:start; padding:14px 0; border-top:1px solid var(--line)}
+.fieldrow:first-of-type{border-top:none}
+.fieldlabel{font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding-top:7px}
+.chooser{display:flex; flex-wrap:wrap; gap:8px}
+.choice{background:var(--surface-2); border:1px solid var(--line); color:var(--ink); padding:9px 14px; border-radius:9px; font-size:13px}
+.choice.small{padding:6px 11px; font-size:12px}
+.choice:hover{border-color:var(--accent)}
+.choice.sel{background:var(--accent); border-color:var(--accent); color:#fff}
+[data-theme="dark"] .choice.sel{color:#15130E}
+.scope{display:flex; flex-direction:column; gap:10px}
+.subhead{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:6px}
+.checkrow{display:flex; flex-wrap:wrap; gap:8px}
+.chk{display:inline-flex; align-items:center; gap:7px; background:var(--surface-2); border:1px solid var(--line); padding:7px 11px; border-radius:8px; font-size:13px}
+.chk.on{border-color:var(--accent)}
+.chk input{accent-color:var(--accent)}
+.toggle{display:inline-flex; align-items:center; gap:9px; font-size:14px}
+.toggle input{width:16px;height:16px;accent-color:var(--accent)}
+
+.text{background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:14px; color:var(--ink); font-family:var(--ui)}
+.text.num{width:90px}
+.inputrow{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:6px}
+.inputrow .text{flex:1; min-width:200px}
+.primary{background:var(--accent); color:#fff; border:1px solid var(--accent); padding:11px 22px; border-radius:10px; font-size:14px; font-weight:600; letter-spacing:.02em}
+[data-theme="dark"] .primary{color:#15130E}
+.primary:hover{background:var(--accent-deep); border-color:var(--accent-deep)}
+.primary.big{margin-top:18px; padding:13px 30px; font-size:15px}
+.primary.small{padding:7px 14px; font-size:13px}
+.ghost{background:none; border:1px solid var(--line); color:var(--ink); padding:11px 20px; border-radius:10px; font-size:14px}
+.ghost:hover{border-color:var(--accent)}
+
+/* ---- drill ---- */
+.drillhead{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:14px}
+.drillhead .eyebrow{margin:0}
+.progressbar{display:flex; align-items:center; gap:14px; font-size:12px; color:var(--muted)}
+
+/* the inscription tablet — signature element */
+.tablet{position:relative; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
+  padding:34px 32px; box-shadow:inset 0 2px 14px rgba(0,0,0,.06);}
+.tablet::before{content:""; position:absolute; inset:7px; border:1px solid var(--line); border-radius:3px; pointer-events:none; opacity:.8}
+.tablet-eyebrow{font-family:var(--display); text-align:center; font-size:10px; letter-spacing:.34em; text-transform:uppercase; color:var(--muted); margin-bottom:18px}
+.prompt{font-size:20px; text-align:center; line-height:1.5; max-width:560px; margin:0 auto}
+.prompt .lat{font-size:23px}
+.prompt b{font-weight:600}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+
+.answerArea{margin-top:26px; display:flex; flex-direction:column; align-items:center; gap:12px}
+.macrons{display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center}
+.mac{font-family:var(--serif); font-size:17px; width:38px; height:34px; background:var(--surface); border:1px solid var(--line); border-radius:7px; color:var(--ink)}
+.mac:hover{border-color:var(--accent); color:var(--accent)}
+.machint{margin-left:6px}
+.answer-input{font-size:22px; text-align:center; padding:12px 16px; min-width:280px; background:var(--surface);
+  border:none; border-bottom:2px solid var(--line); color:var(--ink); border-radius:4px 4px 0 0; outline:none}
+.answer-input:focus{border-bottom-color:var(--accent)}
+.answer-input.good{border-bottom-color:var(--ok); color:var(--ok)}
+.answer-input.bad{border-bottom-color:var(--err); color:var(--err)}
+.answer-area{width:100%; max-width:520px; font-size:17px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); border-radius:9px; color:var(--ink); resize:vertical}
+.bigform{font-size:38px; text-align:center; margin:4px 0 6px; letter-spacing:.3px}
+
+.feedback{margin-top:20px; display:flex; flex-direction:column; align-items:center; gap:12px}
+.vline{font-size:16px; text-align:center}
+.vline.ok{color:var(--ok)} .vline.err{color:var(--err)} .vline.warn{color:var(--brass)}
+.vline .lat{font-size:19px}
+.note{max-width:520px; text-align:center; color:var(--muted)}
+.analyses{text-align:center; max-width:560px}
+.model{text-align:center}
+.model div{font-family:var(--serif); font-size:19px; margin-top:4px}
+.selfmark{display:flex; gap:12px}
+.ok-btn{background:var(--ok); color:#fff; border:none; padding:9px 18px; border-radius:9px; font-weight:600; font-size:13px}
+.err-btn{background:var(--err); color:#fff; border:none; padding:9px 18px; border-radius:9px; font-weight:600; font-size:13px}
+
+/* parse selectors */
+.parsegrid{display:flex; flex-wrap:wrap; gap:12px; justify-content:center}
+.pcell{display:flex; flex-direction:column; gap:5px}
+.pl{letter-spacing:.08em; text-transform:uppercase}
+.parse-select{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:14px; color:var(--ink); font-family:var(--ui)}
+
+/* mcq */
+.mcq{display:flex; flex-direction:column; gap:9px; width:100%; max-width:520px}
+.mcqbtn{display:flex; align-items:center; gap:12px; text-align:left; background:var(--surface); border:1px solid var(--line); color:var(--ink); padding:12px 15px; border-radius:10px; font-size:15px; font-family:var(--serif)}
+.mcqbtn:hover{border-color:var(--accent)}
+.mcqnum{font-family:var(--ui); font-size:11px; width:22px; height:22px; flex:none; display:grid; place-items:center; border-radius:50%; background:var(--surface-2); border:1px solid var(--line); color:var(--muted)}
+.mcqbtn.right{border-color:var(--ok); background:color-mix(in srgb,var(--ok) 12%, var(--surface))}
+.mcqbtn.wrongpick{border-color:var(--err); background:color-mix(in srgb,var(--err) 12%, var(--surface))}
+
+/* paradigm reference */
+.reference{margin-top:18px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:6px 18px}
+.reference summary{cursor:pointer; padding:12px 0; font-size:13px; font-weight:500; letter-spacing:.04em; color:var(--accent)}
+.para-title{font-family:var(--serif); font-style:italic; font-size:15px; color:var(--muted); margin:6px 0 12px}
+table.paradigm{border-collapse:collapse; width:100%; max-width:460px; margin-bottom:14px}
+table.paradigm th{font-family:var(--ui); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:500; text-align:left; padding:6px 12px}
+table.paradigm td{padding:6px 12px; border-top:1px solid var(--line); font-size:15px}
+.case-label{font-family:var(--ui); font-size:11px; letter-spacing:.06em; text-transform:uppercase; font-weight:600}
+.case-label[data-case=nom]{color:var(--c-nom)} .case-label[data-case=voc]{color:var(--c-voc)}
+.case-label[data-case=gen]{color:var(--c-gen)} .case-label[data-case=dat]{color:var(--c-dat)}
+.case-label[data-case=acc]{color:var(--c-acc)} .case-label[data-case=abl]{color:var(--c-abl)}
+.paradigm .form{font-family:var(--serif)}
+.paradigm .form.hi{background:var(--hi); font-weight:600; border-radius:4px}
+.cmp{display:flex; gap:10px; flex-wrap:wrap}
+.degchip{display:flex; flex-direction:column; gap:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:9px 14px}
+.deg{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.degchip .lat{font-size:18px}
+
+/* case key legend */
+.casekey{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:22px; padding-top:16px; border-top:1px solid var(--line)}
+.casekey-label{margin-right:4px; letter-spacing:.1em; text-transform:uppercase}
+.keychip{font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border:1px solid; border-radius:20px; font-weight:600}
+.keychip[data-case=nom]{color:var(--c-nom)} .keychip[data-case=voc]{color:var(--c-voc)}
+.keychip[data-case=gen]{color:var(--c-gen)} .keychip[data-case=dat]{color:var(--c-dat)}
+.keychip[data-case=acc]{color:var(--c-acc)} .keychip[data-case=abl]{color:var(--c-abl)}
+
+/* progress */
+.bar{display:grid; grid-template-columns:150px 1fr 90px; gap:14px; align-items:center; padding:8px 0}
+.barlabel{font-size:13px}
+.bartrack{height:8px; background:var(--surface-2); border:1px solid var(--line); border-radius:20px; overflow:hidden}
+.barfill{height:100%; background:var(--accent)}
+.barval{font-size:12px; color:var(--muted); text-align:right}
+.mistakes{display:flex; flex-wrap:wrap; gap:7px; margin-top:6px}
+.misitem{font-family:var(--serif); font-size:13px; background:var(--surface-2); border:1px solid var(--line); border-radius:7px; padding:5px 10px}
+.misacc{color:var(--err); font-family:var(--ui); font-size:11px}
+
+/* class / dashboard */
+.banner{background:color-mix(in srgb,var(--brass) 14%, var(--surface)); border:1px solid color-mix(in srgb,var(--brass) 40%, var(--line));
+  border-radius:11px; padding:13px 16px; font-size:13px; line-height:1.5; margin-bottom:20px}
+.classrow{display:flex; justify-content:space-between; align-items:center; gap:14px; padding:11px 0; border-top:1px solid var(--line); font-size:14px; flex-wrap:wrap}
+.code{background:var(--surface-2); border:1px solid var(--line); padding:2px 8px; border-radius:6px; font-size:13px; letter-spacing:.1em}
+.formgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px}
+.formgrid .text, .formgrid .parse-select{width:100%}
+table.roster{width:100%; border-collapse:collapse; margin-top:6px}
+table.roster th{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); text-align:left; padding:8px 10px; font-weight:500}
+table.roster td{padding:9px 10px; border-top:1px solid var(--line); font-size:14px}
+
+/* summary */
+.summary{text-align:center}
+.summary .display{font-size:30px; margin:8px 0}
+.bigpct{font-family:var(--serif); font-size:64px; font-weight:600; color:var(--accent); line-height:1; margin:6px 0 18px}
+.summbtns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+
+@media (max-width:620px){
+  .fieldrow{grid-template-columns:1fr; gap:8px}
+  .fieldlabel{padding-top:0}
+  .formgrid{grid-template-columns:1fr}
+  .bar{grid-template-columns:110px 1fr 64px}
+  .prompt{font-size:18px}
+  .bigform{font-size:30px}
+  .herostats{gap:20px}
+}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/* ===========================================================================
+   LATIN MORPHOLOGY ENGINE  (rule-based generation)
+   Covers the VCE grammar set. Forms carry macrons.
+   Exposes: declineNoun, declineAdjective, makeAdverb, declinePronoun,
+            conjugateVerb, and the seed LEXICON.
+   =========================================================================== */
+
+const CASES = ["nom", "voc", "gen", "dat", "acc", "abl"];
+const NUMS = ["sg", "pl"];
+const CASE_LABEL = { nom:"nominative", voc:"vocative", gen:"genitive", dat:"dative", acc:"accusative", abl:"ablative" };
+const PERSONS = ["1", "2", "3"];
+
+/* ---------- helpers ---------- */
+function chop(word, suffix){ return word.slice(0, word.length - suffix.length); }
+function zip6(stem, ends){ return ends.map(e => stem + e); }
+
+/* =====================================================================
+   NOUNS
+   entry: { lemma, gen, gender:"m"|"f"|"n", decl:1..5, istem:bool, irregular:{} }
+   gen = genitive singular (used to derive 3rd-decl stem; informative otherwise)
+   ===================================================================== */
+function nounStem(entry){
+  const { lemma, gen, decl } = entry;
+  switch(decl){
+    case 1: return chop(lemma, "a");
+    case 2:
+      if(lemma.endsWith("um")) return chop(lemma, "um");
+      if(lemma.endsWith("us")) return chop(lemma, "us");
+      // -er / -ir nouns: stem from genitive (puerī -> puer, agrī -> agr)
+      return chop(gen, "ī");
+    case 3: return chop(gen, "is");
+    case 4: return lemma.endsWith("ū") ? chop(lemma, "ū") : chop(lemma, "us");
+    case 5: return chop(lemma, "ēs");
+  }
+}
+
+function declineNoun(entry){
+  if(entry.irregular) return entry.irregular;
+  const g = entry.gender, n = (g === "n");
+  const stem = nounStem(entry);
+  let sg = {}, pl = {};
+
+  if(entry.decl === 1){
+    sg = { nom:stem+"a", voc:stem+"a", gen:stem+"ae", dat:stem+"ae", acc:stem+"am", abl:stem+"ā" };
+    pl = { nom:stem+"ae", voc:stem+"ae", gen:stem+"ārum", dat:stem+"īs", acc:stem+"ās", abl:stem+"īs" };
+  }
+  else if(entry.decl === 2){
+    if(n){
+      sg = { nom:stem+"um", voc:stem+"um", gen:stem+"ī", dat:stem+"ō", acc:stem+"um", abl:stem+"ō" };
+      pl = { nom:stem+"a", voc:stem+"a", gen:stem+"ōrum", dat:stem+"īs", acc:stem+"a", abl:stem+"īs" };
+    } else {
+      const isIus = entry.lemma.endsWith("ius");
+      const isEr  = !entry.lemma.endsWith("us");
+      const nomSg = entry.lemma;
+      const vocSg = isIus ? chop(entry.lemma,"ius")+"ī" : (isEr ? entry.lemma : stem+"e");
+      sg = { nom:nomSg, voc:vocSg, gen:stem+"ī", dat:stem+"ō", acc:stem+"um", abl:stem+"ō" };
+      pl = { nom:stem+"ī", voc:stem+"ī", gen:stem+"ōrum", dat:stem+"īs", acc:stem+"ōs", abl:stem+"īs" };
+    }
+  }
+  else if(entry.decl === 3){
+    if(n){
+      const ablSg = entry.istem ? stem+"ī" : stem+"e";
+      const nomPl = entry.istem ? stem+"ia" : stem+"a";
+      const genPl = entry.istem ? stem+"ium" : stem+"um";
+      sg = { nom:entry.lemma, voc:entry.lemma, gen:stem+"is", dat:stem+"ī", acc:entry.lemma, abl:ablSg };
+      pl = { nom:nomPl, voc:nomPl, gen:genPl, dat:stem+"ibus", acc:nomPl, abl:stem+"ibus" };
+    } else {
+      const genPl = entry.istem ? stem+"ium" : stem+"um";
+      sg = { nom:entry.lemma, voc:entry.lemma, gen:stem+"is", dat:stem+"ī", acc:stem+"em", abl:stem+"e" };
+      pl = { nom:stem+"ēs", voc:stem+"ēs", gen:genPl, dat:stem+"ibus", acc:stem+"ēs", abl:stem+"ibus" };
+    }
+  }
+  else if(entry.decl === 4){
+    if(n){
+      sg = { nom:stem+"ū", voc:stem+"ū", gen:stem+"ūs", dat:stem+"ū", acc:stem+"ū", abl:stem+"ū" };
+      pl = { nom:stem+"ua", voc:stem+"ua", gen:stem+"uum", dat:stem+"ibus", acc:stem+"ua", abl:stem+"ibus" };
+    } else {
+      sg = { nom:stem+"us", voc:stem+"us", gen:stem+"ūs", dat:stem+"uī", acc:stem+"um", abl:stem+"ū" };
+      pl = { nom:stem+"ūs", voc:stem+"ūs", gen:stem+"uum", dat:stem+"ibus", acc:stem+"ūs", abl:stem+"ibus" };
+    }
+  }
+  else if(entry.decl === 5){
+    const lastStemChar = stem.slice(-1);
+    const vowels = "aeiouāēīōū";
+    const ei = vowels.includes(lastStemChar) ? "ēī" : "eī";
+    sg = { nom:stem+"ēs", voc:stem+"ēs", gen:stem+ei, dat:stem+ei, acc:stem+"em", abl:stem+"ē" };
+    pl = { nom:stem+"ēs", voc:stem+"ēs", gen:stem+"ērum", dat:stem+"ēbus", acc:stem+"ēs", abl:stem+"ēbus" };
+  }
+  return { sg, pl };
+}
+
+/* =====================================================================
+   ADJECTIVES
+   class1 entry: { type:"adj1", m, f, n }            e.g. bonus, bona, bonum
+   class3 entry: { type:"adj3", nom:{m,f,n}, stem }  stem from genitive
+   comparison handled separately
+   ===================================================================== */
+function declineAdj1(m, f, n){
+  // m like 2nd masc (-us or -er), f like 1st, n like 2nd neuter
+  const isEr = !m.endsWith("us");
+  const stem = isEr ? chop(f, "a") : chop(m, "us");
+  const masc = {
+    sg:{ nom:m, voc:(isEr?m:stem+"e"), gen:stem+"ī", dat:stem+"ō", acc:stem+"um", abl:stem+"ō" },
+    pl:{ nom:stem+"ī", voc:stem+"ī", gen:stem+"ōrum", dat:stem+"īs", acc:stem+"ōs", abl:stem+"īs" }
+  };
+  const fem = {
+    sg:{ nom:stem+"a", voc:stem+"a", gen:stem+"ae", dat:stem+"ae", acc:stem+"am", abl:stem+"ā" },
+    pl:{ nom:stem+"ae", voc:stem+"ae", gen:stem+"ārum", dat:stem+"īs", acc:stem+"ās", abl:stem+"īs" }
+  };
+  const neut = {
+    sg:{ nom:stem+"um", voc:stem+"um", gen:stem+"ī", dat:stem+"ō", acc:stem+"um", abl:stem+"ō" },
+    pl:{ nom:stem+"a", voc:stem+"a", gen:stem+"ōrum", dat:stem+"īs", acc:stem+"a", abl:stem+"īs" }
+  };
+  return { m:masc, f:fem, n:neut };
+}
+
+function declineAdj3(nomforms, stem){
+  // i-stem: abl sg -ī, neut nom/acc pl -ia, gen pl -ium
+  const mfNom = nomforms.m, fNom = nomforms.f || nomforms.m, nNom = nomforms.n;
+  const masc = {
+    sg:{ nom:mfNom, voc:mfNom, gen:stem+"is", dat:stem+"ī", acc:stem+"em", abl:stem+"ī" },
+    pl:{ nom:stem+"ēs", voc:stem+"ēs", gen:stem+"ium", dat:stem+"ibus", acc:stem+"ēs", abl:stem+"ibus" }
+  };
+  const fem = {
+    sg:{ nom:fNom, voc:fNom, gen:stem+"is", dat:stem+"ī", acc:stem+"em", abl:stem+"ī" },
+    pl:{ nom:stem+"ēs", voc:stem+"ēs", gen:stem+"ium", dat:stem+"ibus", acc:stem+"ēs", abl:stem+"ibus" }
+  };
+  const neut = {
+    sg:{ nom:nNom, voc:nNom, gen:stem+"is", dat:stem+"ī", acc:nNom, abl:stem+"ī" },
+    pl:{ nom:stem+"ia", voc:stem+"ia", gen:stem+"ium", dat:stem+"ibus", acc:stem+"ia", abl:stem+"ibus" }
+  };
+  return { m:masc, f:fem, n:neut };
+}
+
+// comparative declines as 3rd-decl CONSONANT stem (abl -e, gen pl -um, neut pl -a)
+function declineComparative(stemIor){ // stemIor e.g. "altior"
+  const base = chop(stemIor, "ior"); // "alt"
+  const m = base+"ior", nn = base+"ius", st = base+"iōr";
+  const masc = {
+    sg:{ nom:m, voc:m, gen:st+"is", dat:st+"ī", acc:st+"em", abl:st+"e" },
+    pl:{ nom:st+"ēs", voc:st+"ēs", gen:st+"um", dat:st+"ibus", acc:st+"ēs", abl:st+"ibus" }
+  };
+  const fem = JSON.parse(JSON.stringify(masc));
+  const neut = {
+    sg:{ nom:nn, voc:nn, gen:st+"is", dat:st+"ī", acc:nn, abl:st+"e" },
+    pl:{ nom:st+"a", voc:st+"a", gen:st+"um", dat:st+"ibus", acc:st+"a", abl:st+"ibus" }
+  };
+  return { m:masc, f:fem, n:neut };
+}
+
+const IRREG_COMPARISON = {
+  bonus:   { comp:"melior",  sup:"optimus" },
+  malus:   { comp:"peior",   sup:"pessimus" },
+  magnus:  { comp:"maior",   sup:"maximus" },
+  parvus:  { comp:"minor",   sup:"minimus" },
+  multus:  { comp:"plūs",    sup:"plūrimus" },
+  facilis: { comp:"facilior", sup:"facillimus" },
+  difficilis:{ comp:"difficilior", sup:"difficillimus" },
+  similis: { comp:"similior", sup:"simillimus" },
+  gracilis:{ comp:"gracilior", sup:"gracillimus" },
+  humilis: { comp:"humilior", sup:"humillimus" }
+};
+
+function comparisonOf(entry){
+  const lookup = entry.key || entry.lemma || entry.m;
+  const positive = (entry.type === "adj1") ? entry.m : (entry.nom ? entry.nom.m : entry.lemma);
+  if(IRREG_COMPARISON[lookup]){
+    return { positive, comparative:IRREG_COMPARISON[lookup].comp, superlative:IRREG_COMPARISON[lookup].sup, irregular:true };
+  }
+  let stem, comp, sup;
+  if(entry.type === "adj1"){
+    stem = entry.m.endsWith("us") ? chop(entry.m,"us") : chop(entry.f,"a");
+    comp = stem + "ior";
+    sup = entry.m.endsWith("us") ? stem + "issimus" : entry.m + "rimus"; // -er -> -errimus
+  } else { // adj3
+    stem = entry.stem;
+    comp = stem + "ior";
+    sup = entry.nom.m.endsWith("er") ? entry.nom.m + "rimus" : stem + "issimus"; // ācer -> ācerrimus
+  }
+  return { positive, comparative:comp, superlative:sup, irregular:false };
+}
+
+/* =====================================================================
+   ADVERBS
+   ===================================================================== */
+const IRREG_ADVERB = {
+  bonus:   { pos:"bene", comp:"melius", sup:"optimē" },
+  malus:   { pos:"male", comp:"peius", sup:"pessimē" },
+  magnus:  { pos:"magnopere", comp:"magis", sup:"maximē" },
+  parvus:  { pos:"parum", comp:"minus", sup:"minimē" },
+  multus:  { pos:"multum", comp:"plūs", sup:"plūrimum" },
+  facilis: { pos:"facile", comp:"facilius", sup:"facillimē" }
+};
+function makeAdverb(entry){
+  const lookup = entry.key || entry.lemma || entry.m;
+  if(IRREG_ADVERB[lookup]) return { ...IRREG_ADVERB[lookup], irregular:true };
+  const cmp = comparisonOf(entry);
+  const supAdv = chop(cmp.superlative, "us") + "ē"; // pulcherrimus->pulcherrimē, facillimus->facillimē
+  let pos, stem;
+  if(entry.type === "adj1"){
+    stem = entry.m.endsWith("us") ? chop(entry.m,"us") : chop(entry.f,"a");
+    pos = stem + "ē";
+  } else {
+    stem = entry.stem;
+    pos = stem.endsWith("nt") ? stem + "er" : stem + "iter"; // prūdēns->prūdenter, fortis->fortiter
+  }
+  return { pos, comp:stem+"ius", sup:supAdv, irregular:false };
+}
+
+/* =====================================================================
+   PRONOUNS  (hardcoded paradigms)
+   ===================================================================== */
+const PRONOUNS = {
+  ego: { gloss:"I / we", forms:{
+    sg:{ nom:"ego", gen:"meī", dat:"mihi", acc:"mē", abl:"mē" },
+    pl:{ nom:"nōs", gen:"nostrī/nostrum", dat:"nōbīs", acc:"nōs", abl:"nōbīs" } } },
+  tu: { gloss:"you", forms:{
+    sg:{ nom:"tū", gen:"tuī", dat:"tibi", acc:"tē", abl:"tē" },
+    pl:{ nom:"vōs", gen:"vestrī/vestrum", dat:"vōbīs", acc:"vōs", abl:"vōbīs" } } },
+  se: { gloss:"himself / herself / itself / themselves (reflexive)", forms:{
+    sg:{ gen:"suī", dat:"sibi", acc:"sē", abl:"sē" },
+    pl:{ gen:"suī", dat:"sibi", acc:"sē", abl:"sē" } } },
+  is: { gloss:"he, she, it / that", g:true, forms:{
+    m:{ sg:{nom:"is",gen:"eius",dat:"eī",acc:"eum",abl:"eō"}, pl:{nom:"eī",gen:"eōrum",dat:"eīs",acc:"eōs",abl:"eīs"} },
+    f:{ sg:{nom:"ea",gen:"eius",dat:"eī",acc:"eam",abl:"eā"}, pl:{nom:"eae",gen:"eārum",dat:"eīs",acc:"eās",abl:"eīs"} },
+    n:{ sg:{nom:"id",gen:"eius",dat:"eī",acc:"id",abl:"eō"}, pl:{nom:"ea",gen:"eōrum",dat:"eīs",acc:"ea",abl:"eīs"} } } },
+  hic: { gloss:"this / these", g:true, forms:{
+    m:{ sg:{nom:"hic",gen:"huius",dat:"huic",acc:"hunc",abl:"hōc"}, pl:{nom:"hī",gen:"hōrum",dat:"hīs",acc:"hōs",abl:"hīs"} },
+    f:{ sg:{nom:"haec",gen:"huius",dat:"huic",acc:"hanc",abl:"hāc"}, pl:{nom:"hae",gen:"hārum",dat:"hīs",acc:"hās",abl:"hīs"} },
+    n:{ sg:{nom:"hoc",gen:"huius",dat:"huic",acc:"hoc",abl:"hōc"}, pl:{nom:"haec",gen:"hōrum",dat:"hīs",acc:"haec",abl:"hīs"} } } },
+  ille: { gloss:"that / those", g:true, forms:{
+    m:{ sg:{nom:"ille",gen:"illīus",dat:"illī",acc:"illum",abl:"illō"}, pl:{nom:"illī",gen:"illōrum",dat:"illīs",acc:"illōs",abl:"illīs"} },
+    f:{ sg:{nom:"illa",gen:"illīus",dat:"illī",acc:"illam",abl:"illā"}, pl:{nom:"illae",gen:"illārum",dat:"illīs",acc:"illās",abl:"illīs"} },
+    n:{ sg:{nom:"illud",gen:"illīus",dat:"illī",acc:"illud",abl:"illō"}, pl:{nom:"illa",gen:"illōrum",dat:"illīs",acc:"illa",abl:"illīs"} } } },
+  ipse: { gloss:"-self / very", g:true, forms:{
+    m:{ sg:{nom:"ipse",gen:"ipsīus",dat:"ipsī",acc:"ipsum",abl:"ipsō"}, pl:{nom:"ipsī",gen:"ipsōrum",dat:"ipsīs",acc:"ipsōs",abl:"ipsīs"} },
+    f:{ sg:{nom:"ipsa",gen:"ipsīus",dat:"ipsī",acc:"ipsam",abl:"ipsā"}, pl:{nom:"ipsae",gen:"ipsārum",dat:"ipsīs",acc:"ipsās",abl:"ipsīs"} },
+    n:{ sg:{nom:"ipsum",gen:"ipsīus",dat:"ipsī",acc:"ipsum",abl:"ipsō"}, pl:{nom:"ipsa",gen:"ipsōrum",dat:"ipsīs",acc:"ipsa",abl:"ipsīs"} } } },
+  qui: { gloss:"who, which (relative)", g:true, forms:{
+    m:{ sg:{nom:"quī",gen:"cuius",dat:"cui",acc:"quem",abl:"quō"}, pl:{nom:"quī",gen:"quōrum",dat:"quibus",acc:"quōs",abl:"quibus"} },
+    f:{ sg:{nom:"quae",gen:"cuius",dat:"cui",acc:"quam",abl:"quā"}, pl:{nom:"quae",gen:"quārum",dat:"quibus",acc:"quās",abl:"quibus"} },
+    n:{ sg:{nom:"quod",gen:"cuius",dat:"cui",acc:"quod",abl:"quō"}, pl:{nom:"quae",gen:"quōrum",dat:"quibus",acc:"quae",abl:"quibus"} } } },
+  quis: { gloss:"who? what? (interrogative)", g:true, forms:{
+    m:{ sg:{nom:"quis",gen:"cuius",dat:"cui",acc:"quem",abl:"quō"}, pl:{nom:"quī",gen:"quōrum",dat:"quibus",acc:"quōs",abl:"quibus"} },
+    f:{ sg:{nom:"quis",gen:"cuius",dat:"cui",acc:"quem",abl:"quō"}, pl:{nom:"quae",gen:"quārum",dat:"quibus",acc:"quās",abl:"quibus"} },
+    n:{ sg:{nom:"quid",gen:"cuius",dat:"cui",acc:"quid",abl:"quō"}, pl:{nom:"quae",gen:"quōrum",dat:"quibus",acc:"quae",abl:"quibus"} } } }
+};
+function declinePronoun(key){ return PRONOUNS[key]; }
+
+/* =====================================================================
+   VERBS
+   entry: { pp:[pres1sg, presInf, perf1sg, supine], conj:1|2|3|"3io"|4,
+            deponent:bool, semidep:bool, irregular:{...} }
+   ===================================================================== */
+const VERB_ENDINGS = {
+  presIndAct: {
+    1:["ō","ās","at","āmus","ātis","ant"],
+    2:["eō","ēs","et","ēmus","ētis","ent"],
+    3:["ō","is","it","imus","itis","unt"],
+    "3io":["iō","is","it","imus","itis","iunt"],
+    4:["iō","īs","it","īmus","ītis","iunt"]
+  },
+  presIndPass: {
+    1:["or","āris","ātur","āmur","āminī","antur"],
+    2:["eor","ēris","ētur","ēmur","ēminī","entur"],
+    3:["or","eris","itur","imur","iminī","untur"],
+    "3io":["ior","eris","itur","imur","iminī","iuntur"],
+    4:["ior","īris","ītur","īmur","īminī","iuntur"]
+  },
+  impfIndAct: {
+    1:["ābam","ābās","ābat","ābāmus","ābātis","ābant"],
+    2:["ēbam","ēbās","ēbat","ēbāmus","ēbātis","ēbant"],
+    3:["ēbam","ēbās","ēbat","ēbāmus","ēbātis","ēbant"],
+    "3io":["iēbam","iēbās","iēbat","iēbāmus","iēbātis","iēbant"],
+    4:["iēbam","iēbās","iēbat","iēbāmus","iēbātis","iēbant"]
+  },
+  impfIndPass: {
+    1:["ābar","ābāris","ābātur","ābāmur","ābāminī","ābantur"],
+    2:["ēbar","ēbāris","ēbātur","ēbāmur","ēbāminī","ēbantur"],
+    3:["ēbar","ēbāris","ēbātur","ēbāmur","ēbāminī","ēbantur"],
+    "3io":["iēbar","iēbāris","iēbātur","iēbāmur","iēbāminī","iēbantur"],
+    4:["iēbar","iēbāris","iēbātur","iēbāmur","iēbāminī","iēbantur"]
+  },
+  futIndAct: {
+    1:["ābō","ābis","ābit","ābimus","ābitis","ābunt"],
+    2:["ēbō","ēbis","ēbit","ēbimus","ēbitis","ēbunt"],
+    3:["am","ēs","et","ēmus","ētis","ent"],
+    "3io":["iam","iēs","iet","iēmus","iētis","ient"],
+    4:["iam","iēs","iet","iēmus","iētis","ient"]
+  },
+  futIndPass: {
+    1:["ābor","āberis","ābitur","ābimur","ābiminī","ābuntur"],
+    2:["ēbor","ēberis","ēbitur","ēbimur","ēbiminī","ēbuntur"],
+    3:["ar","ēris","ētur","ēmur","ēminī","entur"],
+    "3io":["iar","iēris","iētur","iēmur","iēminī","ientur"],
+    4:["iar","iēris","iētur","iēmur","iēminī","ientur"]
+  },
+  presSubjAct: {
+    1:["em","ēs","et","ēmus","ētis","ent"],
+    2:["eam","eās","eat","eāmus","eātis","eant"],
+    3:["am","ās","at","āmus","ātis","ant"],
+    "3io":["iam","iās","iat","iāmus","iātis","iant"],
+    4:["iam","iās","iat","iāmus","iātis","iant"]
+  },
+  presSubjPass: {
+    1:["er","ēris","ētur","ēmur","ēminī","entur"],
+    2:["ear","eāris","eātur","eāmur","eāminī","eantur"],
+    3:["ar","āris","ātur","āmur","āminī","antur"],
+    "3io":["iar","iāris","iātur","iāmur","iāminī","iantur"],
+    4:["iar","iāris","iātur","iāmur","iāminī","iantur"]
+  }
+};
+const IMPF_SUBJ_ACT_END = ["em","ēs","et","ēmus","ētis","ent"];      // attach to (inf - final e)
+const IMPF_SUBJ_PASS_END = ["er","ēris","ētur","ēmur","ēminī","entur"];
+const PERF_IND_ACT_END = ["ī","istī","it","imus","istis","ērunt"];
+const PLUP_IND_ACT_END = ["eram","erās","erat","erāmus","erātis","erant"];
+const FUTP_IND_ACT_END = ["erō","eris","erit","erimus","eritis","erint"];
+const PERF_SUBJ_ACT_END = ["erim","erīs","erit","erīmus","erītis","erint"];
+const PLUP_SUBJ_ACT_END = ["issem","issēs","isset","issēmus","issētis","issent"];
+const SUM_PRES = ["sum","es","est","sumus","estis","sunt"];
+const SUM_IMPF = ["eram","erās","erat","erāmus","erātis","erant"];
+const SUM_FUT  = ["erō","eris","erit","erimus","eritis","erunt"];
+const SUM_PRES_SUBJ = ["sim","sīs","sit","sīmus","sītis","sint"];
+const SUM_IMPF_SUBJ = ["essem","essēs","esset","essēmus","essētis","essent"];
+
+function verbRoot(inf, conj, dep){
+  if(dep){
+    if(conj === 1) return chop(inf, "ārī");
+    if(conj === 2) return chop(inf, "ērī");
+    if(conj === 4) return chop(inf, "īrī");
+    return chop(inf, "ī"); // 3 and 3io deponent infinitives end in -ī
+  }
+  if(conj === 1) return chop(inf, "āre");
+  if(conj === 2) return chop(inf, "ēre");
+  if(conj === 4) return chop(inf, "īre");
+  return chop(inf, "ere"); // 3 and 3io
+}
+// analytic perfect-system forms: participle agrees in NUMBER (sg for 1-3, pl for 4-6)
+function analytic(supStem, auxArr){
+  const sg = supStem + "us", pl = supStem + "ī";
+  return auxArr.map((a, i) => (i < 3 ? sg : pl) + " " + a);
+}
+
+function conjugateVerb(entry){
+  if(entry.irregular) return entry.irregular; // full hardcoded object
+  const [p1, inf, perf1, supine] = entry.pp;
+  const conj = entry.conj;
+  const root = verbRoot(inf, conj, entry.deponent);
+  const perfStem = perf1 ? chop(perf1, "ī") : null;
+  const supStem = supine ? chop(supine, "um") : null;      // amāt
+  const ppp = supStem ? supStem + "us" : null;             // amātus
+  const dep = !!entry.deponent;
+
+  const out = { indicative:{}, subjunctive:{}, imperative:{}, infinitive:{}, participle:{}, gerund:{}, supine:{}, meta:{ conj, deponent:dep } };
+
+  // ---- present-stem synthetic forms ----
+  const synth = (tableKey) => zip6(root, VERB_ENDINGS[tableKey][conj]);
+  const infMinusE = chop(inf, "e"); // amār, monēr, reger, caper, audīr
+
+  // indicative active / passive
+  if(dep){
+    out.indicative.present  = synth("presIndPass");
+    out.indicative.imperfect= synth("impfIndPass");
+    out.indicative.future   = synth("futIndPass");
+  } else {
+    out.indicative.present  = synth("presIndAct");
+    out.indicative.imperfect= synth("impfIndAct");
+    out.indicative.future   = synth("futIndAct");
+    out.indicative.presentPassive  = synth("presIndPass");
+    out.indicative.imperfectPassive= synth("impfIndPass");
+    out.indicative.futurePassive   = synth("futIndPass");
+  }
+
+  // subjunctive present / imperfect
+  if(dep){
+    out.subjunctive.present  = synth("presSubjPass");
+    out.subjunctive.imperfect= IMPF_SUBJ_PASS_END.map(e => infMinusE + e);
+  } else {
+    out.subjunctive.present  = synth("presSubjAct");
+    out.subjunctive.imperfect= IMPF_SUBJ_ACT_END.map(e => infMinusE + e);
+    out.subjunctive.presentPassive  = synth("presSubjPass");
+    out.subjunctive.imperfectPassive= IMPF_SUBJ_PASS_END.map(e => infMinusE + e);
+  }
+
+  // perfect system
+  const aux = (auxArr) => SUBJ => auxArr; // placeholder not used
+  if(dep){
+    // analytic with PPP (active meaning), participle agrees in number
+    out.indicative.perfect      = analytic(supStem, SUM_PRES);
+    out.indicative.pluperfect   = analytic(supStem, SUM_IMPF);
+    out.indicative.futurePerfect= analytic(supStem, SUM_FUT);
+    out.subjunctive.perfect     = analytic(supStem, SUM_PRES_SUBJ);
+    out.subjunctive.pluperfect  = analytic(supStem, SUM_IMPF_SUBJ);
+  } else {
+    out.indicative.perfect      = zip6(perfStem, PERF_IND_ACT_END);
+    out.indicative.pluperfect   = zip6(perfStem, PLUP_IND_ACT_END);
+    out.indicative.futurePerfect= zip6(perfStem, FUTP_IND_ACT_END);
+    out.subjunctive.perfect     = zip6(perfStem, PERF_SUBJ_ACT_END);
+    out.subjunctive.pluperfect  = zip6(perfStem, PLUP_SUBJ_ACT_END);
+    if(ppp){
+      out.indicative.perfectPassive      = analytic(supStem, SUM_PRES);
+      out.indicative.pluperfectPassive   = analytic(supStem, SUM_IMPF);
+      out.indicative.futurePerfectPassive= analytic(supStem, SUM_FUT);
+      out.subjunctive.perfectPassive     = analytic(supStem, SUM_PRES_SUBJ);
+      out.subjunctive.pluperfectPassive  = analytic(supStem, SUM_IMPF_SUBJ);
+    }
+  }
+
+  // imperatives
+  const sg2 = { 1:root+"ā", 2:root+"ē", 3:root+"e", "3io":root+"e", 4:root+"ī" }[conj];
+  const pl2 = { 1:root+"āte", 2:root+"ēte", 3:root+"ite", "3io":root+"ite", 4:root+"īte" }[conj];
+  if(dep){
+    out.imperative.presentSg = inf.replace(/ī$|ī$/,"") ; // overwritten below
+    out.imperative.presentSg = { 1:root+"āre", 2:root+"ēre", 3:root+"ere", "3io":root+"ere", 4:root+"īre" }[conj];
+    out.imperative.presentPl = { 1:root+"āminī", 2:root+"ēminī", 3:root+"iminī", "3io":root+"iminī", 4:root+"īminī" }[conj];
+  } else {
+    out.imperative.presentSg = sg2;
+    out.imperative.presentPl = pl2;
+  }
+
+  // infinitives
+  if(dep){
+    out.infinitive.present = { 1:root+"ārī", 2:root+"ērī", 3:root+"ī", "3io":root+"ī", 4:root+"īrī" }[conj];
+    out.infinitive.perfect = ppp ? ppp + " esse" : null;
+    out.infinitive.future  = supStem ? supStem + "ūrus esse" : null;
+  } else {
+    out.infinitive.present = inf;
+    out.infinitive.presentPassive = { 1:root+"ārī", 2:root+"ērī", 3:root+"ī", "3io":root+"ī", 4:root+"īrī" }[conj];
+    out.infinitive.perfect = perfStem + "isse";
+    out.infinitive.perfectPassive = ppp ? ppp + " esse" : null;
+    out.infinitive.future = supStem ? supStem + "ūrus esse" : null;
+    out.infinitive.futurePassive = supine ? supine + " īrī" : null;
+  }
+
+  // participles
+  const presPplNom = { 1:root+"āns", 2:root+"ēns", 3:root+"ēns", "3io":root+"iēns", 4:root+"iēns" }[conj];
+  const presPplStem= { 1:root+"ant", 2:root+"ent", 3:root+"ent", "3io":root+"ient", 4:root+"ient" }[conj];
+  out.participle.presentActive = { nom:presPplNom, gen:presPplStem+"is" };
+  if(ppp) out.participle.perfectPassive = ppp;            // active sense if deponent
+  if(supStem) out.participle.futureActive = supStem + "ūrus";
+  const gerStem = { 1:root+"and", 2:root+"end", 3:root+"end", "3io":root+"iend", 4:root+"iend" }[conj];
+  out.participle.gerundive = gerStem + "us";
+
+  // gerund (gen/dat/acc/abl)
+  out.gerund = { gen:gerStem+"ī", dat:gerStem+"ō", acc:gerStem+"um", abl:gerStem+"ō" };
+
+  // supine
+  if(supine){ out.supine = { acc:supine, abl:supStem+"ū" }; }
+
+  return out;
+}
+
+/* =====================================================================
+   IRREGULAR VERBS (indicative + subjunctive + nonfinite essentials)
+   ===================================================================== */
+const SUM = {
+  meta:{ conj:"irr", deponent:false },
+  indicative:{
+    present:["sum","es","est","sumus","estis","sunt"],
+    imperfect:["eram","erās","erat","erāmus","erātis","erant"],
+    future:["erō","eris","erit","erimus","eritis","erunt"],
+    perfect:["fuī","fuistī","fuit","fuimus","fuistis","fuērunt"],
+    pluperfect:["fueram","fuerās","fuerat","fuerāmus","fuerātis","fuerant"],
+    futurePerfect:["fuerō","fueris","fuerit","fuerimus","fueritis","fuerint"]
+  },
+  subjunctive:{
+    present:["sim","sīs","sit","sīmus","sītis","sint"],
+    imperfect:["essem","essēs","esset","essēmus","essētis","essent"],
+    perfect:["fuerim","fuerīs","fuerit","fuerīmus","fuerītis","fuerint"],
+    pluperfect:["fuissem","fuissēs","fuisset","fuissēmus","fuissētis","fuissent"]
+  },
+  imperative:{ presentSg:"es", presentPl:"este" },
+  infinitive:{ present:"esse", perfect:"fuisse", future:"futūrus esse / fore" },
+  participle:{ futureActive:"futūrus" }, gerund:{}, supine:{}
+};
+const POSSUM = {
+  meta:{ conj:"irr", deponent:false },
+  indicative:{
+    present:["possum","potes","potest","possumus","potestis","possunt"],
+    imperfect:["poteram","poterās","poterat","poterāmus","poterātis","poterant"],
+    future:["poterō","poteris","poterit","poterimus","poteritis","poterunt"],
+    perfect:["potuī","potuistī","potuit","potuimus","potuistis","potuērunt"],
+    pluperfect:["potueram","potuerās","potuerat","potuerāmus","potuerātis","potuerant"],
+    futurePerfect:["potuerō","potueris","potuerit","potuerimus","potueritis","potuerint"]
+  },
+  subjunctive:{
+    present:["possim","possīs","possit","possīmus","possītis","possint"],
+    imperfect:["possem","possēs","posset","possēmus","possētis","possent"],
+    perfect:["potuerim","potuerīs","potuerit","potuerīmus","potuerītis","potuerint"],
+    pluperfect:["potuissem","potuissēs","potuisset","potuissēmus","potuissētis","potuissent"]
+  },
+  imperative:{}, infinitive:{ present:"posse", perfect:"potuisse" }, participle:{}, gerund:{}, supine:{}
+};
+const EO = {
+  meta:{ conj:"irr", deponent:false },
+  indicative:{
+    present:["eō","īs","it","īmus","ītis","eunt"],
+    imperfect:["ībam","ībās","ībat","ībāmus","ībātis","ībant"],
+    future:["ībō","ībis","ībit","ībimus","ībitis","ībunt"],
+    perfect:["iī","iistī/īstī","iit","iimus","iistis/īstis","iērunt"],
+    pluperfect:["ieram","ierās","ierat","ierāmus","ierātis","ierant"],
+    futurePerfect:["ierō","ieris","ierit","ierimus","ieritis","ierint"]
+  },
+  subjunctive:{
+    present:["eam","eās","eat","eāmus","eātis","eant"],
+    imperfect:["īrem","īrēs","īret","īrēmus","īrētis","īrent"],
+    perfect:["ierim","ierīs","ierit","ierīmus","ierītis","ierint"],
+    pluperfect:["īssem","īssēs","īsset","īssēmus","īssētis","īssent"]
+  },
+  imperative:{ presentSg:"ī", presentPl:"īte" },
+  infinitive:{ present:"īre", perfect:"īsse / iisse", future:"itūrus esse" },
+  participle:{ presentActive:{nom:"iēns",gen:"euntis"}, futureActive:"itūrus" },
+  gerund:{ gen:"eundī", dat:"eundō", acc:"eundum", abl:"eundō" }, supine:{ acc:"itum", abl:"itū" }
+};
+const FERO = {
+  meta:{ conj:"irr", deponent:false },
+  indicative:{
+    present:["ferō","fers","fert","ferimus","fertis","ferunt"],
+    imperfect:["ferēbam","ferēbās","ferēbat","ferēbāmus","ferēbātis","ferēbant"],
+    future:["feram","ferēs","feret","ferēmus","ferētis","ferent"],
+    perfect:["tulī","tulistī","tulit","tulimus","tulistis","tulērunt"],
+    pluperfect:["tuleram","tulerās","tulerat","tulerāmus","tulerātis","tulerant"],
+    futurePerfect:["tulerō","tuleris","tulerit","tulerimus","tuleritis","tulerint"],
+    presentPassive:["feror","ferris","fertur","ferimur","feriminī","feruntur"]
+  },
+  subjunctive:{
+    present:["feram","ferās","ferat","ferāmus","ferātis","ferant"],
+    imperfect:["ferrem","ferrēs","ferret","ferrēmus","ferrētis","ferrent"],
+    perfect:["tulerim","tulerīs","tulerit","tulerīmus","tulerītis","tulerint"],
+    pluperfect:["tulissem","tulissēs","tulisset","tulissēmus","tulissētis","tulissent"]
+  },
+  imperative:{ presentSg:"fer", presentPl:"ferte" },
+  infinitive:{ present:"ferre", presentPassive:"ferrī", perfect:"tulisse", future:"lātūrus esse" },
+  participle:{ presentActive:{nom:"ferēns",gen:"ferentis"}, perfectPassive:"lātus", futureActive:"lātūrus", gerundive:"ferendus" },
+  gerund:{ gen:"ferendī", dat:"ferendō", acc:"ferendum", abl:"ferendō" }, supine:{ acc:"lātum", abl:"lātū" }
+};
+const VOLO = {
+  meta:{ conj:"irr", deponent:false },
+  indicative:{
+    present:["volō","vīs","vult","volumus","vultis","volunt"],
+    imperfect:["volēbam","volēbās","volēbat","volēbāmus","volēbātis","volēbant"],
+    future:["volam","volēs","volet","volēmus","volētis","volent"],
+    perfect:["voluī","voluistī","voluit","voluimus","voluistis","voluērunt"],
+    pluperfect:["volueram","voluerās","voluerat","voluerāmus","voluerātis","voluerant"],
+    futurePerfect:["voluerō","volueris","voluerit","voluerimus","volueritis","voluerint"]
+  },
+  subjunctive:{
+    present:["velim","velīs","velit","velīmus","velītis","velint"],
+    imperfect:["vellem","vellēs","vellet","vellēmus","vellētis","vellent"],
+    perfect:["voluerim","voluerīs","voluerit","voluerīmus","voluerītis","voluerint"],
+    pluperfect:["voluissem","voluissēs","voluisset","voluissēmus","voluissētis","voluissent"]
+  },
+  imperative:{}, infinitive:{ present:"velle", perfect:"voluisse" },
+  participle:{ presentActive:{nom:"volēns",gen:"volentis"} }, gerund:{}, supine:{}
+};
+const NOLO = {
+  meta:{ conj:"irr", deponent:false },
+  indicative:{
+    present:["nōlō","nōn vīs","nōn vult","nōlumus","nōn vultis","nōlunt"],
+    imperfect:["nōlēbam","nōlēbās","nōlēbat","nōlēbāmus","nōlēbātis","nōlēbant"],
+    future:["nōlam","nōlēs","nōlet","nōlēmus","nōlētis","nōlent"],
+    perfect:["nōluī","nōluistī","nōluit","nōluimus","nōluistis","nōluērunt"],
+    pluperfect:["nōlueram","nōluerās","nōluerat","nōluerāmus","nōluerātis","nōluerant"],
+    futurePerfect:["nōluerō","nōlueris","nōluerit","nōluerimus","nōlueritis","nōluerint"]
+  },
+  subjunctive:{
+    present:["nōlim","nōlīs","nōlit","nōlīmus","nōlītis","nōlint"],
+    imperfect:["nōllem","nōllēs","nōllet","nōllēmus","nōllētis","nōllent"],
+    perfect:["nōluerim","nōluerīs","nōluerit","nōluerīmus","nōluerītis","nōluerint"],
+    pluperfect:["nōluissem","nōluissēs","nōluisset","nōluissēmus","nōluissētis","nōluissent"]
+  },
+  imperative:{ presentSg:"nōlī", presentPl:"nōlīte" }, infinitive:{ present:"nōlle", perfect:"nōluisse" },
+  participle:{ presentActive:{nom:"nōlēns",gen:"nōlentis"} }, gerund:{}, supine:{}
+};
+const MALO = {
+  meta:{ conj:"irr", deponent:false },
+  indicative:{
+    present:["mālō","māvīs","māvult","mālumus","māvultis","mālunt"],
+    imperfect:["mālēbam","mālēbās","mālēbat","mālēbāmus","mālēbātis","mālēbant"],
+    future:["mālam","mālēs","mālet","mālēmus","mālētis","mālent"],
+    perfect:["māluī","māluistī","māluit","māluimus","māluistis","māluērunt"],
+    pluperfect:["mālueram","māluerās","māluerat","māluerāmus","māluerātis","māluerant"],
+    futurePerfect:["māluerō","mālueris","māluerit","māluerimus","mālueritis","māluerint"]
+  },
+  subjunctive:{
+    present:["mālim","mālīs","mālit","mālīmus","mālītis","mālint"],
+    imperfect:["māllem","māllēs","māllet","māllēmus","māllētis","māllent"],
+    perfect:["māluerim","māluerīs","māluerit","māluerīmus","māluerītis","māluerint"],
+    pluperfect:["māluissem","māluissēs","māluisset","māluissēmus","māluissētis","māluissent"]
+  },
+  imperative:{}, infinitive:{ present:"mālle", perfect:"māluisse" }, participle:{}, gerund:{}, supine:{}
+};
+const FIO = {
+  meta:{ conj:"irr", deponent:false, note:"passive of faciō; act. meaning 'become/be made'" },
+  indicative:{
+    present:["fīō","fīs","fit","fīmus","fītis","fīunt"],
+    imperfect:["fīēbam","fīēbās","fīēbat","fīēbāmus","fīēbātis","fīēbant"],
+    future:["fīam","fīēs","fīet","fīēmus","fīētis","fīent"],
+    perfect:["factus sum","factus es","factus est","factī sumus","factī estis","factī sunt"],
+    pluperfect:["factus eram","factus erās","factus erat","factī erāmus","factī erātis","factī erant"]
+  },
+  subjunctive:{
+    present:["fīam","fīās","fīat","fīāmus","fīātis","fīant"],
+    imperfect:["fierem","fierēs","fieret","fierēmus","fierētis","fierent"]
+  },
+  imperative:{ presentSg:"fī", presentPl:"fīte" },
+  infinitive:{ present:"fierī", perfect:"factus esse" },
+  participle:{ perfectPassive:"factus", gerundive:"faciendus" }, gerund:{}, supine:{}
+};
+
+const IRREGULAR_VERBS = { sum:SUM, possum:POSSUM, eo:EO, fero:FERO, volo:VOLO, nolo:NOLO, malo:MALO, fio:FIO };
+
+/* =====================================================================
+   SEED LEXICON
+   ===================================================================== */
+const LEXICON = {
+  nouns: [
+    { key:"puella", lemma:"puella", gen:"puellae", gender:"f", decl:1, gloss:"girl" },
+    { key:"poeta", lemma:"poēta", gen:"poētae", gender:"m", decl:1, gloss:"poet" },
+    { key:"dominus", lemma:"dominus", gen:"dominī", gender:"m", decl:2, gloss:"master, lord" },
+    { key:"puer", lemma:"puer", gen:"puerī", gender:"m", decl:2, gloss:"boy" },
+    { key:"ager", lemma:"ager", gen:"agrī", gender:"m", decl:2, gloss:"field" },
+    { key:"filius", lemma:"fīlius", gen:"fīliī", gender:"m", decl:2, gloss:"son" },
+    { key:"bellum", lemma:"bellum", gen:"bellī", gender:"n", decl:2, gloss:"war" },
+    { key:"rex", lemma:"rēx", gen:"rēgis", gender:"m", decl:3, gloss:"king" },
+    { key:"miles", lemma:"mīles", gen:"mīlitis", gender:"m", decl:3, gloss:"soldier" },
+    { key:"civis", lemma:"cīvis", gen:"cīvis", gender:"m", decl:3, istem:true, gloss:"citizen" },
+    { key:"urbs", lemma:"urbs", gen:"urbis", gender:"f", decl:3, istem:true, gloss:"city" },
+    { key:"corpus", lemma:"corpus", gen:"corporis", gender:"n", decl:3, gloss:"body" },
+    { key:"nomen", lemma:"nōmen", gen:"nōminis", gender:"n", decl:3, gloss:"name" },
+    { key:"mare", lemma:"mare", gen:"maris", gender:"n", decl:3, istem:true, gloss:"sea" },
+    { key:"exercitus", lemma:"exercitus", gen:"exercitūs", gender:"m", decl:4, gloss:"army" },
+    { key:"manus", lemma:"manus", gen:"manūs", gender:"f", decl:4, gloss:"hand, band" },
+    { key:"cornu", lemma:"cornū", gen:"cornūs", gender:"n", decl:4, gloss:"horn, wing" },
+    { key:"res", lemma:"rēs", gen:"reī", gender:"f", decl:5, gloss:"thing, matter" },
+    { key:"dies", lemma:"diēs", gen:"diēī", gender:"m", decl:5, gloss:"day" }
+  ],
+  adjectives: [
+    { key:"bonus", type:"adj1", m:"bonus", f:"bona", n:"bonum", gloss:"good" },
+    { key:"magnus", type:"adj1", m:"magnus", f:"magna", n:"magnum", gloss:"great, large" },
+    { key:"pulcher", type:"adj1", m:"pulcher", f:"pulchra", n:"pulchrum", gloss:"beautiful" },
+    { key:"miser", type:"adj1", m:"miser", f:"misera", n:"miserum", gloss:"wretched" },
+    { key:"fortis", type:"adj3", nom:{m:"fortis",f:"fortis",n:"forte"}, stem:"fort", gloss:"brave, strong" },
+    { key:"omnis", type:"adj3", nom:{m:"omnis",f:"omnis",n:"omne"}, stem:"omn", gloss:"all, every" },
+    { key:"acer", type:"adj3", nom:{m:"ācer",f:"ācris",n:"ācre"}, stem:"ācr", gloss:"sharp, keen" },
+    { key:"felix", type:"adj3", nom:{m:"fēlīx",f:"fēlīx",n:"fēlīx"}, stem:"fēlīc", gloss:"lucky, happy" },
+    { key:"ingens", type:"adj3", nom:{m:"ingēns",f:"ingēns",n:"ingēns"}, stem:"ingent", gloss:"huge" },
+    { key:"facilis", type:"adj3", nom:{m:"facilis",f:"facilis",n:"facile"}, stem:"facil", gloss:"easy" }
+  ],
+  pronouns: ["ego","tu","se","is","hic","ille","ipse","qui","quis"],
+  verbs: [
+    { key:"amo", pp:["amō","amāre","amāvī","amātum"], conj:1, gloss:"love" },
+    { key:"porto", pp:["portō","portāre","portāvī","portātum"], conj:1, gloss:"carry" },
+    { key:"moneo", pp:["moneō","monēre","monuī","monitum"], conj:2, gloss:"warn, advise" },
+    { key:"video", pp:["videō","vidēre","vīdī","vīsum"], conj:2, gloss:"see" },
+    { key:"rego", pp:["regō","regere","rēxī","rēctum"], conj:3, gloss:"rule" },
+    { key:"duco", pp:["dūcō","dūcere","dūxī","ductum"], conj:3, gloss:"lead" },
+    { key:"capio", pp:["capiō","capere","cēpī","captum"], conj:"3io", gloss:"take, capture" },
+    { key:"facio", pp:["faciō","facere","fēcī","factum"], conj:"3io", gloss:"make, do" },
+    { key:"audio", pp:["audiō","audīre","audīvī","audītum"], conj:4, gloss:"hear" },
+    { key:"venio", pp:["veniō","venīre","vēnī","ventum"], conj:4, gloss:"come" },
+    { key:"sequor", pp:["sequor","sequī","secūtus sum","secūtum"], conj:3, deponent:true, gloss:"follow" },
+    { key:"hortor", pp:["hortor","hortārī","hortātus sum","hortātum"], conj:1, deponent:true, gloss:"urge, encourage" },
+    { key:"sum", irregular:SUM, gloss:"be" },
+    { key:"possum", irregular:POSSUM, gloss:"be able, can" },
+    { key:"eo", irregular:EO, gloss:"go" },
+    { key:"fero", irregular:FERO, gloss:"bring, bear" },
+    { key:"volo", irregular:VOLO, gloss:"want, wish" },
+    { key:"nolo", irregular:NOLO, gloss:"not want, be unwilling" },
+    { key:"malo", irregular:MALO, gloss:"prefer" },
+    { key:"fio", irregular:FIO, gloss:"become, be made" }
+  ]
+};
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    CASES, NUMS, CASE_LABEL, PERSONS,
+    declineNoun, declineAdj1, declineAdj3, declineComparative, comparisonOf,
+    makeAdverb, declinePronoun, conjugateVerb, IRREGULAR_VERBS, LEXICON, PRONOUNS
+  };
+}
+if (typeof window !== "undefined") {
+  Object.assign(window, {
+    CASES, NUMS, CASE_LABEL, PERSONS,
+    declineNoun, declineAdj1, declineAdj3, declineComparative, comparisonOf,
+    makeAdverb, declinePronoun, conjugateVerb, IRREGULAR_VERBS, LEXICON, PRONOUNS
+  });
+}
+
+</script>
+<script>
+/* ===========================================================================
+   LVDVS — application layer
+   Depends on the morphology engine (global functions) loaded before this file.
+   =========================================================================== */
+(function(){
+"use strict";
+
+/* ---------------------------------------------------------------------------
+   0. utilities
+--------------------------------------------------------------------------- */
+const MAC = { "ā":"a","ē":"e","ī":"i","ō":"o","ū":"u","Ā":"A","Ē":"E","Ī":"I","Ō":"O","Ū":"U" };
+const stripMacrons = s => (s||"").replace(/[āēīōūĀĒĪŌŪ]/g, c => MAC[c]);
+const norm = s => (s||"").normalize("NFC").trim().toLowerCase().replace(/\s+/g," ");
+function gradeForm(input, correct, requireMacrons){
+  const alts = String(correct).split("/").map(x=>x.trim());
+  const a = norm(input);
+  for(const c of alts){ if(a === norm(c)) return "correct"; }
+  for(const c of alts){ if(stripMacrons(a) === stripMacrons(norm(c))) return requireMacrons ? "macron" : "correct"; }
+  return "wrong";
+}
+const rand = arr => arr[Math.floor(Math.random()*arr.length)];
+const shuffle = arr => { const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const el = (tag, attrs={}, ...kids) => {
+  const n = document.createElement(tag);
+  for(const k in attrs){
+    if(k === "class") n.className = attrs[k];
+    else if(k === "html") n.innerHTML = attrs[k];
+    else if(k.startsWith("on") && typeof attrs[k] === "function") n.addEventListener(k.slice(2), attrs[k]);
+    else if(attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  }
+  for(const kid of kids){ if(kid==null) continue; n.appendChild(typeof kid==="string" ? document.createTextNode(kid) : kid); }
+  return n;
+};
+const uid4 = () => Math.random().toString(36).slice(2,8);
+const now = () => Date.now();
+const DAY = 86400000;
+
+/* ---------------------------------------------------------------------------
+   1. persistence abstraction
+   Backends: FirebaseStore (if config present) > LocalStore > MemoryStore.
+   The whole app talks only to `store`; switching backend changes nothing above.
+--------------------------------------------------------------------------- */
+function localStorageWorks(){
+  try { const k="__lvdvs_t"; localStorage.setItem(k,"1"); localStorage.removeItem(k); return true; }
+  catch(e){ return false; }
+}
+function MemoryStore(){
+  const m = new Map();
+  return {
+    kind:"memory",
+    getJSON:(k,d)=> m.has(k)? JSON.parse(m.get(k)) : d,
+    setJSON:(k,v)=> m.set(k, JSON.stringify(v)),
+    del:(k)=> m.delete(k)
+  };
+}
+function LocalStore(){
+  return {
+    kind:"local",
+    getJSON:(k,d)=>{ try{ const v=localStorage.getItem(k); return v? JSON.parse(v):d; }catch(e){ return d; } },
+    setJSON:(k,v)=>{ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+    del:(k)=>{ try{ localStorage.removeItem(k); }catch(e){} }
+  };
+}
+/* Firebase activates only when window.LVDVS_FIREBASE_CONFIG is defined (post-deploy).
+   It is loaded lazily so the app runs with zero network in preview / offline. */
+const FIREBASE_ENABLED = (typeof window !== "undefined" && window.LVDVS_FIREBASE_CONFIG &&
+                          window.LVDVS_FIREBASE_CONFIG.apiKey);
+
+const kv = FIREBASE_ENABLED ? LocalStore() : (localStorageWorks() ? LocalStore() : MemoryStore());
+
+/* Data access keyed by user. Single shared local user in local/memory mode;
+   the same shapes back the cloud model, so the dashboard renders identically. */
+const DB = {
+  profile(uid){ return kv.getJSON("lvdvs:profile:"+uid, null); },
+  setProfile(uid,p){ kv.setJSON("lvdvs:profile:"+uid, p); },
+  progress(uid){ return kv.getJSON("lvdvs:progress:"+uid, { items:{}, stats:{}, streak:0, lastDay:null, totalSeen:0, totalCorrect:0 }); },
+  setProgress(uid,p){ kv.setJSON("lvdvs:progress:"+uid, p); },
+  classes(){ return kv.getJSON("lvdvs:classes", []); },
+  setClasses(c){ kv.setJSON("lvdvs:classes", c); },
+  assignments(){ return kv.getJSON("lvdvs:assignments", []); },
+  setAssignments(a){ kv.setJSON("lvdvs:assignments", a); },
+  attempts(){ return kv.getJSON("lvdvs:attempts", []); },
+  setAttempts(a){ kv.setJSON("lvdvs:attempts", a); }
+};
+
+/* ---------------------------------------------------------------------------
+   2. application state
+--------------------------------------------------------------------------- */
+const N = window;  // engine globals live on window
+const LEX = N.LEXICON;
+
+const state = {
+  view: "home",
+  user: null,                 // {uid, displayName, role}
+  settings: { requireMacrons:false, theme:"light", quizCount:15 },
+  session: null               // active drill session
+};
+
+/* current signed-in user (local default profile auto-created) */
+function ensureLocalUser(){
+  let p = DB.profile("local");
+  if(!p){ p = { uid:"local", displayName:"Student", role:"student", classIds:[] }; DB.setProfile("local", p); }
+  state.user = p;
+}
+
+/* ---------------------------------------------------------------------------
+   3. spaced repetition (Leitner)
+--------------------------------------------------------------------------- */
+const BOX_INTERVAL = [0, 1, 3, 7, 16, 35]; // days by box level
+function recordResult(itemKey, category, correct){
+  const prog = DB.progress(state.user.uid);
+  const it = prog.items[itemKey] || { box:0, due:0, seen:0, correct:0 };
+  it.seen++; if(correct) it.correct++;
+  it.box = correct ? Math.min(it.box+1, 5) : 0;
+  it.due = now() + BOX_INTERVAL[it.box]*DAY;
+  prog.items[itemKey] = it;
+  const c = prog.stats[category] || { seen:0, correct:0 };
+  c.seen++; if(correct) c.correct++; prog.stats[category] = c;
+  prog.totalSeen++; if(correct) prog.totalCorrect++;
+  const today = new Date().toDateString();
+  if(prog.lastDay !== today){ prog.streak = (prog.lastDay && (Date.parse(today)-Date.parse(prog.lastDay))<=DAY*1.5)? prog.streak+1 : 1; prog.lastDay = today; }
+  DB.setProgress(state.user.uid, prog);
+}
+function dueCount(){
+  const prog = DB.progress(state.user.uid); const t = now();
+  return Object.values(prog.items).filter(i=> i.due && i.due <= t && i.box>0).length;
+}
+function categoryWeight(category){
+  const prog = DB.progress(state.user.uid);
+  const c = prog.stats[category];
+  if(!c || c.seen < 4) return 1.0;
+  return 1.0 + (1 - c.correct/c.seen) * 2.5; // weak categories sampled more
+}
+
+/* ---------------------------------------------------------------------------
+   4. scope catalogue  (what each module can quiz; user-selectable)
+--------------------------------------------------------------------------- */
+const SCOPE = {
+  decline: {
+    label:"Noun declension",
+    groups:[
+      { id:"d1", label:"1st declension", keys:["puella","poeta"] },
+      { id:"d2", label:"2nd declension", keys:["dominus","puer","ager","filius","bellum"] },
+      { id:"d3", label:"3rd declension", keys:["rex","miles","civis","urbs","corpus","nomen","mare"] },
+      { id:"d4", label:"4th declension", keys:["exercitus","manus","cornu"] },
+      { id:"d5", label:"5th declension", keys:["res","dies"] }
+    ]
+  },
+  conjugate: {
+    label:"Verb conjugation",
+    groups:[
+      { id:"c1", label:"1st conjugation", keys:["amo","porto"] },
+      { id:"c2", label:"2nd conjugation", keys:["moneo","video"] },
+      { id:"c3", label:"3rd conjugation", keys:["rego","duco"] },
+      { id:"cio", label:"3rd-io", keys:["capio","facio"] },
+      { id:"c4", label:"4th conjugation", keys:["audio","venio"] },
+      { id:"cdep", label:"Deponents", keys:["sequor","hortor"] },
+      { id:"cirr", label:"Irregular verbs", keys:["sum","possum","eo","fero","volo","nolo","malo","fio"] }
+    ],
+    tenseGroups:[
+      { id:"tpres", label:"Present system (pres/impf/fut)", tenses:["present","imperfect","future"] },
+      { id:"tperf", label:"Perfect system (perf/plup/fut.perf)", tenses:["perfect","pluperfect","futurePerfect"] }
+    ],
+    moods:[ {id:"mind",label:"Indicative",mood:"indicative"}, {id:"msub",label:"Subjunctive",mood:"subjunctive"} ],
+    voices:[ {id:"vact",label:"Active",voice:"active"}, {id:"vpas",label:"Passive",voice:"passive"} ]
+  },
+  adjadv: {
+    label:"Adjectives & adverbs",
+    groups:[
+      { id:"a1", label:"1st/2nd-declension adjectives", keys:["bonus","magnus","pulcher","miser"] },
+      { id:"a3", label:"3rd-declension adjectives", keys:["fortis","omnis","acer","felix","ingens","facilis"] }
+    ],
+    tasks:[
+      { id:"tdec", label:"Decline (agreement)" },
+      { id:"tcomp", label:"Comparison (comp./superl.)" },
+      { id:"tadv", label:"Adverb formation" }
+    ]
+  },
+  pronoun: {
+    label:"Pronouns",
+    groups:[ { id:"pall", label:"All pronouns", keys:["ego","tu","se","is","hic","ille","ipse","qui","quis"] } ]
+  },
+  parse: { label:"Parsing (form → analysis)", usesModule:true },
+  syntax: { label:"Syntax identification" },
+  translate: { label:"Translation (self-marked)" }
+};
+const TENSE_LABEL = { present:"present", imperfect:"imperfect", future:"future", perfect:"perfect", pluperfect:"pluperfect", futurePerfect:"future perfect" };
+const NUM_LABEL = { sg:"singular", pl:"plural" };
+const GEN_LABEL = { m:"masculine", f:"feminine", n:"neuter" };
+const ORD = { "1":"1st","2":"2nd","3":"3rd" };
+const noCompare = new Set(["omnis"]); // semantically non-gradable in the seed
+
+/* ---------------------------------------------------------------------------
+   5. form helpers built on the engine
+--------------------------------------------------------------------------- */
+function nounEntry(key){ return LEX.nouns.find(n=>n.key===key); }
+function verbEntry(key){ return LEX.verbs.find(v=>v.key===key); }
+function adjEntry(key){ return LEX.adjectives.find(a=>a.key===key); }
+
+function verbForm(v, sel){
+  const idx = (sel.number==="sg"?0:3) + (parseInt(sel.person,10)-1);
+  let key = sel.tense;
+  let table = sel.mood === "indicative" ? v.indicative : v.subjunctive;
+  if(sel.mood === "subjunctive" && (sel.tense==="future" || sel.tense==="futurePerfect")) return null;
+  if(sel.voice === "passive") key = key + "Passive";
+  const arr = table && table[key];
+  if(!arr) return null;
+  const f = arr[idx];
+  if(!f || /undefined/.test(f)) return null;
+  return f;
+}
+/* enumerate valid verb slots for scope, filtering missing forms */
+function verbSlots(v, tenses, moods, voices, deponent, irregular){
+  const out = [];
+  const useVoices = (deponent) ? ["active"] : voices;
+  for(const tense of tenses)
+    for(const mood of moods)
+      for(const voice of useVoices)
+        for(const person of ["1","2","3"])
+          for(const number of ["sg","pl"]){
+            const sel = { tense, mood, voice, person, number };
+            if(verbForm(v, sel)) out.push(sel);
+          }
+  return out;
+}
+
+/* ---------------------------------------------------------------------------
+   6. question generators  → {prompt, eyebrow, answer|analysis, kind, itemKey,
+                              category, render(panel), lemma, paradigm}
+--------------------------------------------------------------------------- */
+function pickScopeKeys(module, sel){
+  const cfg = SCOPE[module];
+  let keys = [];
+  cfg.groups.forEach(g => { if(sel.groups.includes(g.id)) keys = keys.concat(g.keys); });
+  return keys.length ? keys : cfg.groups.flatMap(g=>g.keys);
+}
+
+function genDecline(sel){
+  const keys = pickScopeKeys("decline", sel);
+  const key = rand(keys); const e = nounEntry(key); const d = N.declineNoun(e);
+  const num = rand(N.NUMS);
+  const cas = rand(N.CASES);
+  const answer = d[num][cas];
+  return {
+    kind:"produce", category:"decline:"+e.decl, itemKey:`decline:${key}:${cas}:${num}`,
+    eyebrow:`Decline · ${ordinalDecl(e.decl)} declension`,
+    prompt:`Give the <b>${N.CASE_LABEL[cas]} ${NUM_LABEL[num]}</b> of <span class="lat">${e.lemma}, ${e.gen}</span> <span class="muted">(${e.gloss})</span>`,
+    answer, lemma:e, caseHi:{cas,num}, paradigm:()=>paradigmNoun(e,{cas,num})
+  };
+}
+function genConjugate(sel){
+  const keys = pickScopeKeys("conjugate", sel);
+  let tenses=[]; (SCOPE.conjugate.tenseGroups).forEach(t=>{ if(sel.tenses.includes(t.id)) tenses=tenses.concat(t.tenses); });
+  if(!tenses.length) tenses = ["present","imperfect","future","perfect","pluperfect"];
+  let moods = sel.moods.length ? SCOPE.conjugate.moods.filter(m=>sel.moods.includes(m.id)).map(m=>m.mood) : ["indicative"];
+  let voices = sel.voices.length ? SCOPE.conjugate.voices.filter(v=>sel.voices.includes(v.id)).map(v=>v.voice) : ["active"];
+  // choose a verb that yields at least one slot in scope
+  let e, slots=[]; let guard=0;
+  do { e = verbEntry(rand(keys)); const v=N.conjugateVerb(e);
+       slots = verbSlots(v, tenses, moods, voices, e.deponent, !!e.irregular); guard++; }
+  while(slots.length===0 && guard<30);
+  const v = N.conjugateVerb(e);
+  if(!slots.length){ return genConjugate({groups:["c1"],tenses:["tpres"],moods:["mind"],voices:["vact"]}); }
+  const sl = rand(slots);
+  const answer = verbForm(v, sl);
+  const voiceTxt = e.deponent ? "(deponent)" : sl.voice;
+  return {
+    kind:"produce", category:"conjugate:"+(e.irregular?"irr":e.conj), itemKey:`conj:${e.key}:${sl.tense}:${sl.mood}:${sl.voice}:${sl.person}:${sl.number}`,
+    eyebrow:`Conjugate · ${verbConjLabel(e)}`,
+    prompt:`Give the <b>${ORD[sl.person]} ${NUM_LABEL[sl.number]} ${TENSE_LABEL[sl.tense]} ${sl.mood} ${voiceTxt}</b> of <span class="lat">${e.pp?e.pp[0]:e.key}</span> <span class="muted">(${e.gloss})</span>`,
+    answer, lemma:e, paradigm:()=>paradigmVerbCell(e, sl)
+  };
+}
+function genAdjAdv(sel){
+  const keys = pickScopeKeys("adjadv", sel);
+  const tasks = sel.tasks && sel.tasks.length ? sel.tasks : ["tdec","tcomp","tadv"];
+  let task = rand(tasks);
+  let e = adjEntry(rand(keys));
+  if((task==="tcomp"||task==="tadv") && noCompare.has(e.key)){ const ok = keys.filter(k=>!noCompare.has(k)); e = adjEntry(rand(ok.length?ok:keys)); if(noCompare.has(e.key)) task="tdec"; }
+  if(task==="tdec"){
+    const d = e.type==="adj1" ? N.declineAdj1(e.m,e.f,e.n) : N.declineAdj3(e.nom, e.stem);
+    const g = rand(["m","f","n"]); const num = rand(N.NUMS); const cas = rand(N.CASES);
+    const answer = d[g][num][cas];
+    return { kind:"produce", category:"adj:"+(e.type), itemKey:`adj:${e.key}:${g}:${cas}:${num}`,
+      eyebrow:`Adjective · agreement`,
+      prompt:`Give the <b>${GEN_LABEL[g]} ${N.CASE_LABEL[cas]} ${NUM_LABEL[num]}</b> of <span class="lat">${adjCitation(e)}</span> <span class="muted">(${e.gloss})</span>`,
+      answer, lemma:e, paradigm:()=>paradigmAdj(e,g,{cas,num}) };
+  }
+  if(task==="tcomp"){
+    const c = N.comparisonOf(e); const deg = rand(["comparative","superlative"]);
+    const answer = c[deg];
+    return { kind:"produce", category:"comparison", itemKey:`comp:${e.key}:${deg}`,
+      eyebrow:`Comparison · ${c.irregular?"irregular":"regular"}`,
+      prompt:`Give the <b>${deg}</b> (masc. nom. sg.) of <span class="lat">${c.positive}</span> <span class="muted">(${e.gloss})</span>`,
+      answer, lemma:e, paradigm:()=>paradigmComparison(e) };
+  }
+  // adverb
+  const a = N.makeAdverb(e); const deg = rand(["pos","comp","sup"]);
+  const degLabel = {pos:"positive",comp:"comparative",sup:"superlative"}[deg];
+  return { kind:"produce", category:"adverb", itemKey:`adv:${e.key}:${deg}`,
+    eyebrow:`Adverb · ${a.irregular?"irregular":"regular"}`,
+    prompt:`Give the <b>${degLabel} adverb</b> from <span class="lat">${adjCitation(e)}</span> <span class="muted">(${e.gloss})</span>`,
+    answer:a[deg], lemma:e, paradigm:()=>paradigmAdverb(e) };
+}
+function genPronoun(sel){
+  const keys = pickScopeKeys("pronoun", sel);
+  let p, key, g, num, cas, answer, guard=0;
+  do {
+    key = rand(keys); p = N.declinePronoun(key); guard++;
+    g = p.g ? rand(["m","f","n"]) : null; num = rand(N.NUMS);
+    const forms = p.g ? p.forms[g][num] : p.forms[num];
+    const avail = N.CASES.filter(c=>forms[c]);
+    cas = rand(avail); answer = forms[cas];
+  } while(!answer && guard<30);
+  return { kind:"produce", category:"pronoun", itemKey:`pron:${key}:${g||"-"}:${cas}:${num}`,
+    eyebrow:`Pronoun · ${key}`,
+    prompt:`Give the <b>${g?GEN_LABEL[g]+" ":""}${N.CASE_LABEL[cas]} ${NUM_LABEL[num]}</b> of <span class="lat">${pronCitation(key)}</span> <span class="muted">(${p.gloss})</span>`,
+    answer, lemma:{key}, paradigm:()=>paradigmPronoun(key,g,{cas,num}) };
+}
+
+/* ---- parsing: reverse index per lemma (form → set of analyses) ---- */
+function genParse(sel){
+  const base = sel.parseModule || "decline";
+  if(base === "conjugate"){
+    const keys = pickScopeKeys("conjugate", sel);
+    const e = verbEntry(rand(keys)); const v = N.conjugateVerb(e);
+    const idx = {};
+    const tenses = ["present","imperfect","future","perfect","pluperfect","futurePerfect"];
+    const moods = ["indicative","subjunctive"]; const voices=["active","passive"];
+    for(const mood of moods) for(const tense of tenses) for(const voice of (e.deponent?["active"]:voices))
+      for(const person of ["1","2","3"]) for(const number of ["sg","pl"]){
+        const f = verbForm(v,{tense,mood,voice,person,number}); if(!f) continue;
+        (idx[f] = idx[f]||[]).push({person,number,tense,mood,voice});
+      }
+    const forms = Object.keys(idx); const form = rand(forms);
+    return { kind:"parseVerb", category:"parse:verb", itemKey:`parsev:${e.key}:${form}`,
+      eyebrow:`Parse · verb`, form, analyses:idx[form], lemma:e,
+      prompt:`Parse this form of <span class="lat">${e.pp?e.pp[0]:e.key}</span> <span class="muted">(${e.gloss})</span>:`,
+      paradigm:()=>null };
+  }
+  // nominal parse: nouns / adjectives / pronouns
+  let pool = base; const sub = pool;
+  let lemma, gen, hasGender=false, idx={};
+  if(sub==="decline"){
+    const keys = pickScopeKeys("decline", sel); const e = nounEntry(rand(keys)); lemma=e;
+    const d = N.declineNoun(e);
+    for(const num of N.NUMS) for(const cas of N.CASES){ const f=d[num][cas]; (idx[f]=idx[f]||[]).push({cas,num}); }
+  } else if(sub==="adjadv"){
+    const keys = pickScopeKeys("adjadv", sel); const e=adjEntry(rand(keys)); lemma=e; hasGender=true;
+    const d = e.type==="adj1"?N.declineAdj1(e.m,e.f,e.n):N.declineAdj3(e.nom,e.stem);
+    for(const g of ["m","f","n"]) for(const num of N.NUMS) for(const cas of N.CASES){ const f=d[g][num][cas]; (idx[f]=idx[f]||[]).push({g,cas,num}); }
+  } else { // pronoun
+    const keys = pickScopeKeys("pronoun", sel); const key=rand(keys); const p=N.declinePronoun(key); lemma={key, gloss:p.gloss}; hasGender=!!p.g;
+    if(p.g){ for(const g of ["m","f","n"]) for(const num of N.NUMS) for(const cas of N.CASES){ const f=p.forms[g][num][cas]; if(f)(idx[f]=idx[f]||[]).push({g,cas,num}); } }
+    else { for(const num of N.NUMS) for(const cas of N.CASES){ const f=p.forms[num][cas]; if(f)(idx[f]=idx[f]||[]).push({cas,num}); } }
+  }
+  const forms = Object.keys(idx); const form = rand(forms);
+  return { kind:"parseNominal", category:"parse:nominal", itemKey:`parsen:${lemma.key}:${form}`,
+    eyebrow:`Parse · ${sub==="adjadv"?"adjective":sub==="pronoun"?"pronoun":"noun"}`,
+    form, analyses:idx[form], hasGender, lemma,
+    prompt:`Parse this form of <span class="lat">${lemma.lemma||pronCitation(lemma.key)}</span> <span class="muted">(${lemma.gloss||""})</span>:`,
+    paradigm:()=>null };
+}
+
+/* ---- syntax identification (curated) ---- */
+const SYNTAX_BANK = [
+  { lat:"Urbe captā, mīlitēs domum revertērunt.", gloss:"With the city captured, the soldiers returned home.",
+    answer:"Ablative absolute", note:"Noun + perfect participle in the ablative, grammatically detached from the main clause." },
+  { lat:"Caesar dīxit hostēs venīre.", gloss:"Caesar said that the enemy were coming.",
+    answer:"Indirect statement", note:"Verb of speaking + accusative subject (hostēs) + infinitive (venīre)." },
+  { lat:"Vēnit ut rēgem vidēret.", gloss:"He came in order to see the king.",
+    answer:"Purpose clause", note:"ut + imperfect subjunctive expressing intention." },
+  { lat:"Tam fortis erat ut nēmō eum vinceret.", gloss:"He was so brave that no one could defeat him.",
+    answer:"Result clause", note:"tam … ut + subjunctive expressing consequence." },
+  { lat:"Cum haec dīxisset, discessit.", gloss:"When he had said these things, he departed.",
+    answer:"Cum clause (circumstantial)", note:"cum + pluperfect subjunctive giving the circumstances of the main verb." },
+  { lat:"Imperāvit eīs ut fugerent.", gloss:"He ordered them to flee.",
+    answer:"Indirect command", note:"Verb of commanding + ut + subjunctive." },
+  { lat:"Haec urbs cēpienda est.", gloss:"This city must be captured.",
+    answer:"Gerundive of obligation", note:"Gerundive + esse (passive periphrastic) expressing necessity." },
+  { lat:"Gladiō hostem occīdit.", gloss:"He killed the enemy with a sword.",
+    answer:"Ablative of means", note:"Bare ablative (gladiō) naming the instrument." },
+  { lat:"Mīlitibus urbs dēfendenda est.", gloss:"The city must be defended by the soldiers.",
+    answer:"Dative of agent", note:"Dative (mīlitibus) of the agent with a passive periphrastic." },
+  { lat:"Vir quem vīdī erat rēx.", gloss:"The man whom I saw was the king.",
+    answer:"Relative clause", note:"Relative pronoun (quem) agreeing with its antecedent vir." },
+  { lat:"Rēgem moritūrum vīdimus.", gloss:"We saw the king about to die.",
+    answer:"Future participle", note:"-ūrus participle expressing imminent action." },
+  { lat:"Mīles ā duce laudātus est.", gloss:"The soldier was praised by the general.",
+    answer:"Ablative of agent", note:"ā/ab + ablative (ā duce) with a passive verb." },
+  { lat:"Puer patrī similis est.", gloss:"The boy is like his father.",
+    answer:"Dative with adjective", note:"similis governs the dative (patrī)." },
+  { lat:"Tribus diēbus vēnit.", gloss:"He came within three days.",
+    answer:"Ablative of time within which", note:"Bare ablative (tribus diēbus) measuring the period." },
+  { lat:"Rōmae mānsit.", gloss:"He remained at Rome.",
+    answer:"Locative", note:"Rōmae is the locative case naming the place where." },
+  { lat:"Hortātus mīlitēs, signum dedit.", gloss:"Having encouraged the soldiers, he gave the signal.",
+    answer:"Perfect participle (deponent)", note:"hortātus, deponent perfect participle, active in sense." }
+];
+const SYNTAX_OPTIONS = Array.from(new Set(SYNTAX_BANK.map(s=>s.answer)));
+function genSyntax(){
+  const q = rand(SYNTAX_BANK);
+  const distract = shuffle(SYNTAX_OPTIONS.filter(o=>o!==q.answer)).slice(0,3);
+  const options = shuffle([q.answer, ...distract]);
+  return { kind:"mcq", category:"syntax", itemKey:`syntax:${q.lat}`,
+    eyebrow:"Syntax · identify the construction",
+    prompt:`<span class="lat">${q.lat}</span><br><span class="muted">${q.gloss}</span>`,
+    options, answer:q.answer, note:q.note };
+}
+
+/* ---- translation (self-marked) ---- */
+const TRANSLATE_BANK = [
+  { lat:"Arma virumque canō.", model:"I sing of arms and the man." },
+  { lat:"Mīlitēs, hortātus ducem, in hostēs ruērunt.", model:"The soldiers, having encouraged the general, rushed against the enemy." },
+  { lat:"Sī hoc dīxisset, omnēs eum audīvissent.", model:"If he had said this, everyone would have listened to him." },
+  { lat:"Tantus erat clāmor ut nēmō vōcem ducis audīret.", model:"So great was the shouting that no one could hear the general's voice." },
+  { lat:"Urbe captā, cīvēs ad templa cōnfūgērunt.", model:"When the city had been captured, the citizens fled to the temples." },
+  { lat:"Rēx, quī fortissimus omnium erat, prīmus pugnāvit.", model:"The king, who was the bravest of all, fought first." },
+  { lat:"Haec nōbīs facienda sunt antequam nox veniat.", model:"These things must be done by us before night comes." },
+  { lat:"Caesar tam celeriter vēnit ut hostēs nōn parātī essent.", model:"Caesar came so quickly that the enemy were not prepared." }
+];
+function genTranslate(){
+  const q = rand(TRANSLATE_BANK);
+  return { kind:"selfmark", category:"translate", itemKey:`tr:${q.lat}`,
+    eyebrow:"Translate · self-marked",
+    prompt:`<span class="lat">${q.lat}</span>`, model:q.model };
+}
+
+function generate(session){
+  const m = session.module, sel = session.scope;
+  switch(m){
+    case "decline": return genDecline(sel);
+    case "conjugate": return genConjugate(sel);
+    case "adjadv": return genAdjAdv(sel);
+    case "pronoun": return genPronoun(sel);
+    case "parse": return genParse(sel);
+    case "syntax": return genSyntax();
+    case "translate": return genTranslate();
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   7. paradigm reference renderers (case-colour coded)
+--------------------------------------------------------------------------- */
+function caseTable(rowsByNum, hi){
+  const t = el("table",{class:"paradigm"});
+  const head = el("tr",{}, el("th",{},""), el("th",{},"singular"), el("th",{},"plural"));
+  t.appendChild(head);
+  for(const cas of N.CASES){
+    const tr = el("tr",{});
+    tr.appendChild(el("td",{class:"case-label", "data-case":cas}, N.CASE_LABEL[cas]));
+    for(const num of ["sg","pl"]){
+      const v = rowsByNum[num] ? rowsByNum[num][cas] : "";
+      const isHi = hi && hi.cas===cas && hi.num===num;
+      tr.appendChild(el("td",{class:"form"+(isHi?" hi":""), "data-case":cas}, v||"—"));
+    }
+    t.appendChild(tr);
+  }
+  return t;
+}
+function paradigmNoun(e, hi){
+  const d = N.declineNoun(e);
+  return wrapPara(`${e.lemma}, ${e.gen} — ${GEN_LABEL[e.gender]}, ${ordinalDecl(e.decl)} declension`, caseTable(d, hi));
+}
+function paradigmAdj(e,g,hi){
+  const d = e.type==="adj1"?N.declineAdj1(e.m,e.f,e.n):N.declineAdj3(e.nom,e.stem);
+  const wrap = el("div",{});
+  wrap.appendChild(genderTabs(e, g, hi));
+  return wrapPara(`${adjCitation(e)} — ${GEN_LABEL[g]}`, caseTable(d[g], hi));
+}
+function genderTabs(){ return el("div",{}); }
+function paradigmPronoun(key,g,hi){
+  const p = N.declinePronoun(key);
+  const rows = p.g ? p.forms[g] : p.forms;
+  return wrapPara(`${pronCitation(key)}${g?" — "+GEN_LABEL[g]:""}`, caseTable(rows, hi));
+}
+function paradigmComparison(e){
+  const c = N.comparisonOf(e);
+  const box = el("div",{class:"cmp"},
+    chip("positive", c.positive), chip("comparative", c.comparative), chip("superlative", c.superlative));
+  return wrapPara(`Comparison of ${adjCitation(e)}${c.irregular?" (irregular)":""}`, box);
+}
+function paradigmAdverb(e){
+  const a = N.makeAdverb(e);
+  const box = el("div",{class:"cmp"}, chip("positive", a.pos), chip("comparative", a.comp), chip("superlative", a.sup));
+  return wrapPara(`Adverb of ${adjCitation(e)}${a.irregular?" (irregular)":""}`, box);
+}
+function paradigmVerbCell(e, sl){
+  const v = N.conjugateVerb(e);
+  const map = sl.mood==="indicative" ? v.indicative : v.subjunctive;
+  let key = sl.tense + (sl.voice==="passive"?"Passive":"");
+  const arr = map[key]||[];
+  const t = el("table",{class:"paradigm verb"});
+  t.appendChild(el("tr",{}, el("th",{},""), el("th",{},"singular"), el("th",{},"plural")));
+  for(let p=0;p<3;p++){
+    const tr = el("tr",{});
+    tr.appendChild(el("td",{class:"case-label"}, ORD[String(p+1)]));
+    [0,3].forEach(off=>{
+      const i=off+p; const isHi=(parseInt(sl.person,10)-1===p)&&((sl.number==="sg")?off===0:off===3);
+      tr.appendChild(el("td",{class:"form"+(isHi?" hi":"")}, arr[i]||"—"));
+    });
+    t.appendChild(tr);
+  }
+  const head = `${e.pp?e.pp[0]:e.key} — ${TENSE_LABEL[sl.tense]} ${sl.mood} ${e.deponent?"(deponent)":sl.voice}`;
+  return wrapPara(head, t);
+}
+function chip(label, val){ return el("div",{class:"degchip"}, el("span",{class:"deg"},label), el("span",{class:"lat"},val)); }
+function wrapPara(title, node){ const w=el("div",{}); w.appendChild(el("div",{class:"para-title"}, title)); w.appendChild(node); return w; }
+
+function ordinalDecl(d){ return ["","1st","2nd","3rd","4th","5th"][d]; }
+function verbConjLabel(e){ if(e.irregular) return "irregular"; if(e.conj==="3io") return "3rd-io"+(e.deponent?" deponent":""); return e.conj+(e.conj===1?"st":e.conj===2?"nd":e.conj===3?"rd":"th")+" conj."+(e.deponent?" deponent":""); }
+function adjCitation(e){ return e.type==="adj1" ? `${e.m}, ${e.f}, ${e.n}` : `${e.nom.m}, ${e.nom.f}, ${e.nom.n}`; }
+function pronCitation(key){ const map={ego:"ego",tu:"tū",se:"suī (reflexive)",is:"is, ea, id",hic:"hic, haec, hoc",ille:"ille, illa, illud",ipse:"ipse, ipsa, ipsum",qui:"quī, quae, quod",quis:"quis, quid"}; return map[key]||key; }
+
+/* ---------------------------------------------------------------------------
+   8. rendering — shell + router
+--------------------------------------------------------------------------- */
+const root = () => document.getElementById("root");
+function setView(v){ state.view = v; renderApp(); }
+
+function topbar(){
+  const nav = el("nav",{class:"nav"});
+  [["home","Drill"],["progress","Progress"],["class","Class"]].forEach(([v,label])=>{
+    nav.appendChild(el("button",{class:"navbtn"+(state.view===v?" active":""), onclick:()=>setView(v)}, label));
+  });
+  const acct = el("div",{class:"acct"},
+    el("span",{class:"who"}, `${state.user.displayName} · ${state.user.role}`),
+    el("button",{class:"linklike", title:"Switch role (demo)", onclick:toggleRole}, "switch role"),
+    el("button",{class:"iconbtn", title:"Toggle theme", onclick:toggleTheme}, state.settings.theme==="dark"?"☼":"☾")
+  );
+  return el("header",{class:"topbar"},
+    el("div",{class:"brand"}, el("span",{class:"wordmark"},"LVDVS"), el("span",{class:"tagline"},"VCE Latin trainer")),
+    nav, acct);
+}
+function toggleTheme(){ state.settings.theme = state.settings.theme==="dark"?"light":"dark"; document.documentElement.setAttribute("data-theme", state.settings.theme); persistSettings(); renderApp(); }
+function toggleRole(){ state.user.role = state.user.role==="teacher"?"student":"teacher"; DB.setProfile(state.user.uid, state.user); renderApp(); }
+function persistSettings(){ kv.setJSON("lvdvs:settings", state.settings); }
+
+function renderApp(){
+  const r = root(); r.innerHTML = "";
+  r.appendChild(topbar());
+  const main = el("main",{class:"main"});
+  r.appendChild(main);
+  if(state.view==="home") renderHome(main);
+  else if(state.view==="drill") renderDrill(main);
+  else if(state.view==="progress") renderProgress(main);
+  else if(state.view==="class") renderClass(main);
+}
+
+/* ---------- home / setup ---------- */
+const DEFAULT_SCOPE = {
+  decline:{groups:["d1","d2","d3"]},
+  conjugate:{groups:["c1","c2","c3"],tenses:["tpres"],moods:["mind"],voices:["vact"]},
+  adjadv:{groups:["a1","a3"],tasks:["tdec","tcomp","tadv"]},
+  pronoun:{groups:["pall"]},
+  parse:{parseModule:"decline",groups:["d1","d2","d3"]},
+  syntax:{}, translate:{}
+};
+const setupChoice = { module:"decline", scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)), mode:"practice" };
+
+function renderHome(main){
+  const prog = DB.progress(state.user.uid);
+  const acc = prog.totalSeen ? Math.round(100*prog.totalCorrect/prog.totalSeen) : 0;
+  main.appendChild(el("section",{class:"hero"},
+    el("p",{class:"eyebrow"},"Ad fontēs"),
+    el("h1",{class:"display"},"Drill the grammar until the forms are automatic."),
+    el("div",{class:"herostats"},
+      stat(dueCount(), "due for review"),
+      stat(prog.streak||0, "day streak"),
+      stat(acc+"%", "lifetime accuracy"),
+      stat(prog.totalSeen||0, "answered"))
+  ));
+
+  const card = el("section",{class:"card setup"});
+  card.appendChild(el("h2",{class:"cardh"},"New drill"));
+  // module picker
+  const modRow = el("div",{class:"chooser"});
+  Object.keys(SCOPE).forEach(m=>{
+    modRow.appendChild(el("button",{class:"choice"+(setupChoice.module===m?" sel":""), onclick:()=>{ setupChoice.module=m; renderHome(main); }}, SCOPE[m].label));
+  });
+  card.appendChild(field("Module", modRow));
+  // scope controls
+  card.appendChild(scopeControls(setupChoice.module, main));
+  // mode
+  const modeRow = el("div",{class:"chooser"});
+  [["practice","Practice (endless, instant feedback)"],["quiz","Quiz ("+state.settings.quizCount+" questions, scored)"]].forEach(([v,l])=>{
+    modeRow.appendChild(el("button",{class:"choice"+(setupChoice.mode===v?" sel":""), onclick:()=>{ setupChoice.mode=v; renderHome(main); }}, l));
+  });
+  card.appendChild(field("Mode", modeRow));
+  // macron setting
+  const macWrap = el("label",{class:"toggle"},
+    el("input",{type:"checkbox", checked: state.settings.requireMacrons?"checked":null, onchange:(e)=>{ state.settings.requireMacrons=e.target.checked; persistSettings(); }}),
+    el("span",{}, "Require macrons (mark vowel length as wrong if missing)"));
+  card.appendChild(field("Marking", macWrap));
+
+  card.appendChild(el("button",{class:"primary big", onclick:startSession}, "Begin"));
+  main.appendChild(card);
+}
+function stat(v,l){ return el("div",{class:"stat"}, el("span",{class:"statn"}, String(v)), el("span",{class:"statl"}, l)); }
+function field(label, node){ return el("div",{class:"fieldrow"}, el("div",{class:"fieldlabel"}, label), node); }
+
+function scopeControls(module, main){
+  const cfg = SCOPE[module]; const sc = setupChoice.scope[module] || (setupChoice.scope[module]={});
+  const box = el("div",{class:"scope"});
+  if(module==="syntax" || module==="translate"){
+    box.appendChild(el("p",{class:"muted small"}, module==="syntax"
+      ? "Identify the dominant construction in each sentence. Sixteen seed sentences; edit SYNTAX_BANK to add your set texts."
+      : "Read, translate, then reveal the model and mark yourself. Eight seed sentences; edit TRANSLATE_BANK to add your own."));
+    return field("Scope", box);
+  }
+  if(module==="parse"){
+    const pm = el("div",{class:"chooser"});
+    [["decline","Nouns"],["adjadv","Adjectives"],["pronoun","Pronouns"],["conjugate","Verbs"]].forEach(([v,l])=>{
+      pm.appendChild(el("button",{class:"choice small"+((sc.parseModule||"decline")===v?" sel":""), onclick:()=>{ sc.parseModule=v; sc.groups=DEFAULT_SCOPE[v==="decline"?"decline":v].groups.slice(); renderHome(main); }}, l));
+    });
+    box.appendChild(field("Parse from", pm));
+    const srcMod = sc.parseModule||"decline";
+    box.appendChild(checkGroup(SCOPE[srcMod].groups, sc, "groups", main));
+    return field("Scope", box);
+  }
+  // groups
+  box.appendChild(checkGroup(cfg.groups, sc, "groups", main));
+  if(module==="conjugate"){
+    box.appendChild(subhead("Tenses"));
+    box.appendChild(checkGroup(cfg.tenseGroups, sc, "tenses", main));
+    box.appendChild(subhead("Mood / voice"));
+    const mv = el("div",{class:"checkrow"});
+    cfg.moods.forEach(o=> mv.appendChild(checkbox(o.label, sc, "moods", o.id, main)));
+    cfg.voices.forEach(o=> mv.appendChild(checkbox(o.label, sc, "voices", o.id, main)));
+    box.appendChild(mv);
+  }
+  if(module==="adjadv"){
+    box.appendChild(subhead("Tasks"));
+    box.appendChild(checkGroup(cfg.tasks, sc, "tasks", main));
+  }
+  return field("Scope", box);
+}
+function subhead(t){ return el("div",{class:"subhead"}, t); }
+function checkGroup(options, sc, field, main){
+  const row = el("div",{class:"checkrow"});
+  options.forEach(o=> row.appendChild(checkbox(o.label, sc, field, o.id, main)));
+  return row;
+}
+function checkbox(label, sc, field, id, main){
+  if(!Array.isArray(sc[field])) sc[field] = [];
+  const checked = sc[field].includes(id);
+  return el("label",{class:"chk"+(checked?" on":"")},
+    el("input",{type:"checkbox", checked:checked?"checked":null, onchange:(e)=>{
+      const set = new Set(sc[field]); if(e.target.checked) set.add(id); else set.delete(id);
+      sc[field] = Array.from(set); renderHome(main);
+    }}), el("span",{}, label));
+}
+
+function startSession(){
+  const m = setupChoice.module;
+  const scope = setupChoice.scope[m] || {};
+  state.session = { module:m, scope, mode:setupChoice.mode, n:0, correct:0, target: setupChoice.mode==="quiz"?state.settings.quizCount:Infinity, done:false, results:[], current:null };
+  nextQuestion();
+  setView("drill");
+}
+
+/* ---------- drill ---------- */
+function nextQuestion(){ const s=state.session; s.current = generate(s); s.answered=false; }
+
+function renderDrill(main){
+  const s = state.session;
+  if(!s){ setView("home"); return; }
+  if(s.done){ return renderSummary(main); }
+  const q = s.current;
+
+  const head = el("div",{class:"drillhead"},
+    el("p",{class:"eyebrow"}, q.eyebrow),
+    el("div",{class:"progressbar"},
+      el("span",{}, s.mode==="quiz"? `Question ${s.n+1} / ${s.target}` : `Answered ${s.n}`),
+      el("button",{class:"linklike", onclick:endSession}, "end")));
+
+  const panel = el("section",{class:"tablet"});
+  panel.appendChild(el("div",{class:"tablet-eyebrow"}, "rogātiō"));
+  panel.appendChild(el("div",{class:"prompt", html:q.prompt}));
+
+  const answerArea = el("div",{class:"answerArea"});
+  const feedback = el("div",{class:"feedback"});
+
+  if(q.kind==="produce"){
+    const input = el("input",{class:"answer-input lat", type:"text", autocomplete:"off", autocapitalize:"off", spellcheck:"false", placeholder:"type the form…"});
+    const tool = macronToolbar(input);
+    const submit = el("button",{class:"primary", onclick:()=>submitProduce(q,input,feedback,submit)}, "Check");
+    input.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); if(!s.answered) submitProduce(q,input,feedback,submit); else advance(); } });
+    answerArea.appendChild(tool);
+    answerArea.appendChild(el("div",{class:"inputrow"}, input, submit));
+    setTimeout(()=>input.focus(),30);
+  }
+  else if(q.kind==="parseNominal" || q.kind==="parseVerb"){
+    answerArea.appendChild(el("div",{class:"bigform lat"}, q.form));
+    const sel = parseSelectors(q);
+    answerArea.appendChild(sel.node);
+    const submit = el("button",{class:"primary", onclick:()=>submitParse(q,sel,feedback,submit)}, "Check");
+    answerArea.appendChild(submit);
+  }
+  else if(q.kind==="mcq"){
+    const opts = el("div",{class:"mcq"});
+    q.options.forEach((o,i)=>{
+      opts.appendChild(el("button",{class:"mcqbtn", onclick:()=>submitMCQ(q,o,opts,feedback)}, el("span",{class:"mcqnum"}, String(i+1)), el("span",{}, o)));
+    });
+    answerArea.appendChild(opts);
+    document.onkeydown = (e)=>{ const n=parseInt(e.key,10); if(n>=1&&n<=q.options.length&&!s.answered){ submitMCQ(q,q.options[n-1],opts,feedback); } };
+  }
+  else if(q.kind==="selfmark"){
+    const revealBtn = el("button",{class:"primary", onclick:()=>{
+      feedback.innerHTML="";
+      feedback.appendChild(el("div",{class:"model"}, el("span",{class:"muted small"},"Model translation"), el("div",{}, q.model)));
+      feedback.appendChild(el("div",{class:"selfmark"},
+        el("button",{class:"ok-btn", onclick:()=>{ markSelf(q,true,feedback); }}, "I had it"),
+        el("button",{class:"err-btn", onclick:()=>{ markSelf(q,false,feedback); }}, "Missed it")));
+    }}, "Reveal model");
+    answerArea.appendChild(el("textarea",{class:"answer-area lat", rows:"2", placeholder:"type your translation, then reveal…"}));
+    answerArea.appendChild(revealBtn);
+  }
+
+  panel.appendChild(answerArea);
+  panel.appendChild(feedback);
+
+  main.appendChild(head);
+  main.appendChild(panel);
+
+  // paradigm reference (collapsible) for morphology questions
+  if(q.paradigm){
+    const para = q.paradigm();
+    if(para){
+      const det = el("details",{class:"reference"});
+      det.appendChild(el("summary",{}, "Paradigm reference"));
+      det.appendChild(para);
+      main.appendChild(det);
+    }
+  }
+  main.appendChild(caseKey());
+}
+
+function macronToolbar(input){
+  const bar = el("div",{class:"macrons"});
+  ["ā","ē","ī","ō","ū"].forEach(ch=>{
+    bar.appendChild(el("button",{class:"mac", type:"button", tabindex:"-1", onclick:()=>insertAtCursor(input,ch)}, ch));
+  });
+  bar.appendChild(el("span",{class:"machint small muted"}, "Alt + vowel also works"));
+  input.addEventListener("keydown",(e)=>{
+    if(e.altKey){ const m={a:"ā",e:"ē",i:"ī",o:"ō",u:"ū"}[e.key.toLowerCase()]; if(m){ e.preventDefault(); insertAtCursor(input,m); } }
+  });
+  return bar;
+}
+function insertAtCursor(input,ch){
+  const s=input.selectionStart, e=input.selectionEnd, v=input.value;
+  input.value = v.slice(0,s)+ch+v.slice(e); input.selectionStart=input.selectionEnd=s+ch.length; input.focus();
+}
+
+function submitProduce(q,input,feedback,submitBtn){
+  const s=state.session; if(s.answered) return;
+  const verdict = gradeForm(input.value, q.answer, state.settings.requireMacrons);
+  const correct = verdict==="correct";
+  s.answered=true;
+  recordResult(q.itemKey, q.category, correct);
+  s.n++; if(correct) s.correct++;
+  input.classList.add(correct?"good":"bad"); input.disabled=true;
+  submitBtn.textContent="Next"; submitBtn.onclick=advance;
+  feedback.innerHTML="";
+  feedback.appendChild(verdictLine(verdict, q.answer));
+  endOrContinue(s);
+}
+function verdictLine(verdict, answer){
+  if(verdict==="correct") return el("div",{class:"vline ok"}, el("b",{},"Correct."), el("span",{class:"lat"}, " "+answer));
+  if(verdict==="macron") return el("div",{class:"vline warn"}, el("b",{},"Macron length off."), el("span",{}," The answer is "), el("span",{class:"lat"}, answer));
+  return el("div",{class:"vline err"}, el("b",{},"Not quite."), el("span",{}," The answer is "), el("span",{class:"lat"}, answer));
+}
+function advance(){ const s=state.session; if(s.done) return; nextQuestion(); renderApp(); }
+
+function parseSelectors(q){
+  const node = el("div",{class:"parsegrid"});
+  const sels = {};
+  function pick(name, label, options, labels){
+    const s = el("select",{class:"parse-select"});
+    s.appendChild(el("option",{value:""}, label));
+    options.forEach(o=> s.appendChild(el("option",{value:o}, labels? labels[o] : o)));
+    sels[name]=s; node.appendChild(el("label",{class:"pcell"}, el("span",{class:"pl small muted"},label), s));
+  }
+  if(q.kind==="parseNominal"){
+    pick("cas","case", N.CASES, N.CASE_LABEL);
+    pick("num","number", N.NUMS, NUM_LABEL);
+    if(q.hasGender) pick("g","gender", ["m","f","n"], GEN_LABEL);
+  } else {
+    pick("person","person", ["1","2","3"], {"1":"1st","2":"2nd","3":"3rd"});
+    pick("number","number", N.NUMS, NUM_LABEL);
+    pick("tense","tense", ["present","imperfect","future","perfect","pluperfect","futurePerfect"], TENSE_LABEL);
+    pick("mood","mood", ["indicative","subjunctive"], {indicative:"indicative",subjunctive:"subjunctive"});
+    pick("voice","voice", ["active","passive"], {active:"active",passive:"passive"});
+  }
+  return { node, sels };
+}
+function submitParse(q,sel,feedback,submitBtn){
+  const s=state.session; if(s.answered) return;
+  const got = {}; let blank=false;
+  for(const k in sel.sels){ const v=sel.sels[k].value; if(!v) blank=true; got[k]=v; }
+  if(blank){ feedback.innerHTML=""; feedback.appendChild(el("div",{class:"vline warn"},"Select every box.")); return; }
+  const match = q.analyses.some(a=>{
+    return Object.keys(a).every(k=> String(a[k])===String(got[k==="cas"?"cas":k]||got[k]));
+  });
+  s.answered=true; recordResult(q.itemKey,q.category,match); s.n++; if(match) s.correct++;
+  feedback.innerHTML="";
+  feedback.appendChild(el("div",{class:"vline "+(match?"ok":"err")}, el("b",{}, match?"Correct.":"Not quite.")));
+  feedback.appendChild(el("div",{class:"analyses"}, el("span",{class:"muted small"},"Valid analyses: "),
+    el("span",{}, q.analyses.map(describeAnalysis).join("  ·  "))));
+  submitBtn.textContent="Next"; submitBtn.onclick=advance;
+  for(const k in sel.sels) sel.sels[k].disabled=true;
+  endOrContinue(s);
+}
+function describeAnalysis(a){
+  if(a.tense) return `${ORD[a.person]} ${a.number} ${TENSE_LABEL[a.tense]} ${a.mood} ${a.voice}`;
+  return `${a.g?GEN_LABEL[a.g]+" ":""}${N.CASE_LABEL[a.cas]} ${NUM_LABEL[a.num]}`;
+}
+function submitMCQ(q,choice,opts,feedback){
+  const s=state.session; if(s.answered) return; s.answered=true;
+  const correct = choice===q.answer;
+  recordResult(q.itemKey,q.category,correct); s.n++; if(correct) s.correct++;
+  Array.from(opts.children).forEach(b=>{ b.disabled=true; const t=b.textContent.replace(/^\d/,"").trim(); if(t===q.answer) b.classList.add("right"); else if(t===choice) b.classList.add("wrongpick"); });
+  feedback.innerHTML="";
+  feedback.appendChild(el("div",{class:"vline "+(correct?"ok":"err")}, el("b",{}, correct?"Correct.":"Not quite.")));
+  feedback.appendChild(el("div",{class:"note small"}, q.note));
+  feedback.appendChild(el("button",{class:"primary", onclick:advance}, "Next"));
+  document.onkeydown=null;
+  endOrContinue(s);
+}
+function markSelf(q,correct,feedback){
+  const s=state.session; if(s.answered) return; s.answered=true;
+  recordResult(q.itemKey,q.category,correct); s.n++; if(correct) s.correct++;
+  feedback.appendChild(el("button",{class:"primary", onclick:advance}, "Next"));
+  endOrContinue(s);
+}
+function endOrContinue(s){ if(s.mode==="quiz" && s.n>=s.target){ s.done=true; } }
+
+function endSession(){ const s=state.session; if(!s) return setView("home"); s.done=true; renderApp(); }
+
+function renderSummary(main){
+  const s=state.session; const pct = s.n? Math.round(100*s.correct/s.n):0;
+  main.appendChild(el("section",{class:"card summary"},
+    el("p",{class:"eyebrow"},"Cōnfectum"),
+    el("h2",{class:"display"}, `${s.correct} / ${s.n} correct`),
+    el("div",{class:"bigpct"}, pct+"%"),
+    el("div",{class:"summbtns"},
+      el("button",{class:"primary", onclick:()=>{ startSession(); }}, "Again"),
+      el("button",{class:"ghost", onclick:()=>setView("home")}, "New drill"),
+      el("button",{class:"ghost", onclick:()=>setView("progress")}, "See progress"))));
+}
+
+/* shared case-colour legend */
+function caseKey(){
+  const k = el("div",{class:"casekey"});
+  k.appendChild(el("span",{class:"casekey-label small muted"},"case key"));
+  N.CASES.forEach(c=> k.appendChild(el("span",{class:"keychip","data-case":c}, N.CASE_LABEL[c])));
+  return k;
+}
+
+/* ---------- progress ---------- */
+function renderProgress(main){
+  const prog = DB.progress(state.user.uid);
+  const acc = prog.totalSeen? Math.round(100*prog.totalCorrect/prog.totalSeen):0;
+  main.appendChild(el("section",{class:"hero compact"},
+    el("p",{class:"eyebrow"},"Ratiō"),
+    el("h1",{class:"display"},"Your progress"),
+    el("div",{class:"herostats"},
+      stat(acc+"%","lifetime accuracy"), stat(prog.streak||0,"day streak"),
+      stat(dueCount(),"due for review"), stat(Object.keys(prog.items).length,"forms tracked"))));
+
+  const cats = Object.entries(prog.stats).sort((a,b)=> (a[1].correct/a[1].seen) - (b[1].correct/b[1].seen));
+  const card = el("section",{class:"card"});
+  card.appendChild(el("h2",{class:"cardh"},"Accuracy by category"));
+  if(!cats.length) card.appendChild(el("p",{class:"muted"},"No data yet. Complete a drill to populate this."));
+  cats.forEach(([cat,c])=>{
+    const p = Math.round(100*c.correct/c.seen);
+    card.appendChild(el("div",{class:"bar"},
+      el("div",{class:"barlabel"}, prettyCat(cat)),
+      el("div",{class:"bartrack"}, el("div",{class:"barfill", style:`width:${p}%`})),
+      el("div",{class:"barval"}, `${p}% · ${c.seen}`)));
+  });
+  main.appendChild(card);
+
+  // weakest forms / review queue
+  const t=now();
+  const due = Object.entries(prog.items).filter(([k,i])=>i.due&&i.due<=t&&i.box>0).slice(0,40);
+  const weak = Object.entries(prog.items).filter(([k,i])=>i.seen>=2 && i.correct/i.seen<0.6).slice(0,40);
+  const q = el("section",{class:"card"});
+  q.appendChild(el("h2",{class:"cardh"},"Review queue"));
+  q.appendChild(el("p",{class:"muted small"}, `${due.length} forms are due now; ${weak.length} forms are below 60% accuracy.`));
+  const list = el("div",{class:"mistakes"});
+  (weak.length?weak:due).slice(0,24).forEach(([k,i])=> list.appendChild(el("span",{class:"misitem"}, k.split(":").slice(1).join(" "), el("span",{class:"misacc"}, ` ${Math.round(100*i.correct/Math.max(i.seen,1))}%`))));
+  q.appendChild(list);
+  main.appendChild(q);
+}
+function prettyCat(cat){
+  const [a,b]=cat.split(":");
+  const map={decline:"Noun decl.",conjugate:"Verb conj.",adj:"Adjective",comparison:"Comparison",adverb:"Adverb",pronoun:"Pronoun",parse:"Parsing",syntax:"Syntax",translate:"Translation"};
+  return (map[a]||a)+(b?` · ${b}`:"");
+}
+
+/* ---------- class / dashboard (renders from DB; identical under Firebase) ---------- */
+function renderClass(main){
+  if(!FIREBASE_ENABLED){
+    main.appendChild(el("div",{class:"banner"},
+      el("b",{},"Local mode. "),
+      "Accounts, cross-device sync and live student monitoring activate once Firebase config is added (see the build notes). Below works locally for one user; the same screens populate with real class data when the backend is connected."));
+  }
+  if(state.user.role==="teacher") renderTeacher(main); else renderStudent(main);
+}
+
+function renderTeacher(main){
+  main.appendChild(el("section",{class:"hero compact"},
+    el("p",{class:"eyebrow"},"Magister"),
+    el("h1",{class:"display"},"Teacher dashboard")));
+
+  const classes = DB.classes(); const assignments = DB.assignments(); const attempts = DB.attempts();
+
+  // create class
+  const cc = el("section",{class:"card"});
+  cc.appendChild(el("h2",{class:"cardh"},"Classes"));
+  const cname = el("input",{class:"text", placeholder:"Class name (e.g. VCE Latin Unit 3/4)"});
+  cc.appendChild(el("div",{class:"inputrow"}, cname,
+    el("button",{class:"primary", onclick:()=>{ if(!cname.value.trim())return; const c={id:uid4(),name:cname.value.trim(),teacherId:state.user.uid,joinCode:uid4().toUpperCase(),students:[]}; const arr=DB.classes(); arr.push(c); DB.setClasses(arr); renderApp(); }}, "Create class")));
+  if(!classes.length) cc.appendChild(el("p",{class:"muted small"},"No classes yet."));
+  classes.forEach(c=>{
+    cc.appendChild(el("div",{class:"classrow"},
+      el("div",{}, el("b",{},c.name), el("span",{class:"muted small"}, `  join code: `), el("code",{class:"code"}, c.joinCode)),
+      el("span",{class:"muted small"}, `${c.students.length} student${c.students.length===1?"":"s"}`)));
+  });
+  main.appendChild(cc);
+
+  // create assignment
+  const ca = el("section",{class:"card"});
+  ca.appendChild(el("h2",{class:"cardh"},"Assignments"));
+  if(!classes.length){ ca.appendChild(el("p",{class:"muted small"},"Create a class first.")); }
+  else {
+    const title = el("input",{class:"text", placeholder:"Assignment title"});
+    const classSel = el("select",{class:"parse-select"}); classes.forEach(c=> classSel.appendChild(el("option",{value:c.id},c.name)));
+    const modSel = el("select",{class:"parse-select"}); Object.keys(SCOPE).forEach(m=> modSel.appendChild(el("option",{value:m},SCOPE[m].label)));
+    const count = el("input",{class:"text num", type:"number", value:"15", min:"5", max:"50"});
+    ca.appendChild(el("div",{class:"formgrid"},
+      labeled("Title", title), labeled("Class", classSel), labeled("Module", modSel), labeled("Questions", count)));
+    ca.appendChild(el("button",{class:"primary", onclick:()=>{
+      if(!title.value.trim())return;
+      const a={ id:uid4(), title:title.value.trim(), classId:classSel.value, module:modSel.value,
+        scope: JSON.parse(JSON.stringify(DEFAULT_SCOPE[modSel.value]||{})), count: parseInt(count.value,10)||15,
+        createdBy: state.user.uid, created: now() };
+      const arr=DB.assignments(); arr.push(a); DB.setAssignments(arr); renderApp();
+    }}, "Create assignment"));
+  }
+  assignments.forEach(a=>{
+    const cls = classes.find(c=>c.id===a.classId);
+    const subs = attempts.filter(t=>t.assignmentId===a.id);
+    const avg = subs.length? Math.round(subs.reduce((s,t)=>s+t.pct,0)/subs.length):null;
+    ca.appendChild(el("div",{class:"classrow"},
+      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module].label} · ${a.count} Q · ${cls?cls.name:"—"}`)),
+      el("span",{class:"muted small"}, subs.length? `${subs.length} submitted · avg ${avg}%` : "no submissions")));
+  });
+  main.appendChild(ca);
+
+  // roster accuracy
+  const rc = el("section",{class:"card"});
+  rc.appendChild(el("h2",{class:"cardh"},"Roster — accuracy"));
+  const roster = rosterRows(classes, attempts);
+  if(!roster.length) rc.appendChild(el("p",{class:"muted small"}, FIREBASE_ENABLED? "No student attempts yet." : "Local mode shows only your own attempts. Connect Firebase for a full roster."));
+  else {
+    const t = el("table",{class:"roster"});
+    t.appendChild(el("tr",{}, el("th",{},"Student"), el("th",{},"Attempts"), el("th",{},"Avg accuracy")));
+    roster.forEach(r=> t.appendChild(el("tr",{}, el("td",{}, r.name), el("td",{}, String(r.n)), el("td",{}, r.avg+"%"))));
+    rc.appendChild(t);
+  }
+  main.appendChild(rc);
+}
+function labeled(l,node){ return el("label",{class:"pcell"}, el("span",{class:"pl small muted"}, l), node); }
+function rosterRows(classes, attempts){
+  // local mode: aggregate the local user's attempts; cloud mode would group by student uid
+  const byStudent = {};
+  attempts.forEach(t=>{ const key=t.studentName||state.user.displayName; (byStudent[key]=byStudent[key]||[]).push(t); });
+  return Object.entries(byStudent).map(([name,arr])=>({ name, n:arr.length, avg:Math.round(arr.reduce((s,t)=>s+t.pct,0)/arr.length) }));
+}
+
+function renderStudent(main){
+  main.appendChild(el("section",{class:"hero compact"},
+    el("p",{class:"eyebrow"},"Discipulus"),
+    el("h1",{class:"display"},"Your classes")));
+  const classes = DB.classes(); const me = state.user;
+  const joined = classes.filter(c=> (me.classIds||[]).includes(c.id));
+
+  const jc = el("section",{class:"card"});
+  jc.appendChild(el("h2",{class:"cardh"},"Join a class"));
+  const code = el("input",{class:"text", placeholder:"Enter join code"});
+  jc.appendChild(el("div",{class:"inputrow"}, code, el("button",{class:"primary", onclick:()=>{
+    const c = DB.classes().find(x=>x.joinCode===code.value.trim().toUpperCase());
+    if(!c){ alertInline(jc,"No class with that code."); return; }
+    me.classIds = Array.from(new Set([...(me.classIds||[]), c.id])); DB.setProfile(me.uid, me);
+    const arr=DB.classes(); const cc=arr.find(x=>x.id===c.id); if(!cc.students.includes(me.uid)) cc.students.push(me.uid); DB.setClasses(arr);
+    renderApp();
+  }}, "Join")));
+  joined.forEach(c=> jc.appendChild(el("div",{class:"classrow"}, el("b",{},c.name))));
+  main.appendChild(jc);
+
+  const ac = el("section",{class:"card"});
+  ac.appendChild(el("h2",{class:"cardh"},"Assignments"));
+  const mine = DB.assignments().filter(a=> (me.classIds||[]).includes(a.classId));
+  const attempts = DB.attempts();
+  if(!mine.length) ac.appendChild(el("p",{class:"muted small"}, joined.length?"No assignments yet.":"Join a class to see assignments."));
+  mine.forEach(a=>{
+    const done = attempts.filter(t=>t.assignmentId===a.id && (t.studentName||me.displayName)===me.displayName);
+    const best = done.length? Math.max(...done.map(t=>t.pct)):null;
+    ac.appendChild(el("div",{class:"classrow"},
+      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module].label} · ${a.count} Q`)),
+      el("div",{},
+        best!=null? el("span",{class:"muted small"}, `best ${best}%  `) : null,
+        el("button",{class:"primary small", onclick:()=>startAssignment(a)}, done.length?"Retry":"Start"))));
+  });
+  main.appendChild(ac);
+}
+function alertInline(parent,msg){ parent.appendChild(el("div",{class:"vline warn"}, msg)); }
+
+function startAssignment(a){
+  state.session = { module:a.module, scope:a.scope, mode:"quiz", n:0, correct:0, target:a.count, done:false, assignmentId:a.id, onDone:(pct)=>{
+    const arr=DB.attempts(); arr.push({ id:uid4(), assignmentId:a.id, studentName:state.user.displayName, pct, when:now() }); DB.setAttempts(arr);
+  }, current:null };
+  // wrap end to record attempt
+  nextQuestion(); setView("drill");
+}
+// hook: when an assignment quiz finishes, record attempt
+const _renderSummary = renderSummary;
+renderSummary = function(main){
+  const s=state.session;
+  if(s.assignmentId && s.onDone && !s._recorded){ s._recorded=true; s.onDone(s.n? Math.round(100*s.correct/s.n):0); }
+  _renderSummary(main);
+};
+
+/* ---------------------------------------------------------------------------
+   9. boot
+--------------------------------------------------------------------------- */
+function boot(){
+  const saved = kv.getJSON("lvdvs:settings", null);
+  if(saved) state.settings = Object.assign(state.settings, saved);
+  document.documentElement.setAttribute("data-theme", state.settings.theme);
+  ensureLocalUser();
+  renderApp();
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+
+})();
+
+</script>
+</body>
+</html>
