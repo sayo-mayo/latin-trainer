@@ -263,7 +263,7 @@ try {
             conjugateVerb, and the seed LEXICON.
    =========================================================================== */
 
-const CASES = ["nom", "voc", "gen", "dat", "acc", "abl"];
+const CASES = ["nom", "voc", "acc", "gen", "dat", "abl"];
 const NUMS = ["sg", "pl"];
 const CASE_LABEL = { nom:"nominative", voc:"vocative", gen:"genitive", dat:"dative", acc:"accusative", abl:"ablative" };
 const PERSONS = ["1", "2", "3"];
@@ -1572,7 +1572,7 @@ const SCOPE = {
     groups:[
       { id:"ego", label:"ego", keys:["ego"] },
       { id:"tu", label:"tu", keys:["tu"] },
-      { id:"se", label:"sui (reflexive)", keys:["se"] },
+      { id:"se", label:"se", keys:["se"] },
       { id:"is", label:"is, ea, id", keys:["is"] },
       { id:"hic", label:"hic, haec, hoc", keys:["hic"] },
       { id:"ille", label:"ille, illa, illud", keys:["ille"] },
@@ -1581,8 +1581,8 @@ const SCOPE = {
       { id:"quis", label:"quis, quid", keys:["quis"] }
     ]
   },
-  parse: { label:"Parsing (form → analysis)", usesModule:true },
-  translate: { label:"Translation (self-marked)" }
+  parse: { label:"Parsing", usesModule:true },
+  translate: { label:"Translation" }
 };
 const TENSE_LABEL = { present:"present", imperfect:"imperfect", future:"future", perfect:"perfect", pluperfect:"pluperfect", futurePerfect:"future perfect" };
 const NUM_LABEL = { sg:"singular", pl:"plural" };
@@ -1863,7 +1863,7 @@ function wrapPara(title, node){ const w=el("div",{}); w.appendChild(el("div",{cl
 function ordinalDecl(d){ return ["","1st","2nd","3rd","4th","5th"][d]; }
 function verbConjLabel(e){ if(e.irregular) return "irregular"; if(e.conj==="3io") return "mixed conj."+(e.deponent?" deponent":""); return e.conj+(e.conj===1?"st":e.conj===2?"nd":e.conj===3?"rd":"th")+" conj."+(e.deponent?" deponent":""); }
 function adjCitation(e){ return e.cite || (e.type==="adj1" ? `${e.m}, ${e.f}, ${e.n}` : `${e.nom.m}, ${e.nom.f}, ${e.nom.n}`); }
-function pronCitation(key){ const map={ego:"ego",tu:"tu",se:"sui (reflexive)",is:"is, ea, id",hic:"hic, haec, hoc",ille:"ille, illa, illud",ipse:"ipse, ipsa, ipsum",qui:"qui, quae, quod",quis:"quis, quid"}; return map[key]||key; }
+function pronCitation(key){ const map={ego:"ego",tu:"tu",se:"se",is:"is, ea, id",hic:"hic, haec, hoc",ille:"ille, illa, illud",ipse:"ipse, ipsa, ipsum",qui:"qui, quae, quod",quis:"quis, quid"}; return map[key]||key; }
 
 /* ---------------------------------------------------------------------------
    8. rendering — shell + router
