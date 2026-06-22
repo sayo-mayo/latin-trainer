@@ -203,6 +203,17 @@ table.roster td{padding:9px 10px; border-top:1px solid var(--line); font-size:14
 
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
 
+/* auth / loading */
+.authwrap{max-width:380px; margin:60px auto; padding:0 22px}
+.authcard{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:28px}
+.authcard h1{font-family:var(--display); font-weight:500; font-size:22px; margin:0 0 4px}
+.authcard .sub{color:var(--muted); font-size:13px; margin:0 0 20px}
+.authcard .text{width:100%; margin-bottom:10px}
+.authrow{display:flex; gap:8px; align-items:center; justify-content:center; margin-top:16px}
+.authtoggle{background:none; border:none; color:var(--accent); text-decoration:underline; font-size:13px; padding:4px}
+.gbtn{width:100%; margin-top:10px}
+.loading{display:grid; place-items:center; height:70vh; color:var(--muted); font-family:var(--display); letter-spacing:.24em; text-transform:uppercase; font-size:12px}
+
 @media (max-width:620px){
   .fieldrow{grid-template-columns:1fr; gap:8px}
   .fieldlabel{padding-top:0}
@@ -227,6 +238,22 @@ window.LVDVS_FIREBASE_CONFIG = {
   appId: "1:164508116976:web:ae2e74a96f75c7a3889f35",
   measurementId: "G-4KDR9FTTQH"
 };
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+try {
+  const app = initializeApp(window.LVDVS_FIREBASE_CONFIG);
+  window.LVDVS_FB = {
+    auth: getAuth(app), db: getFirestore(app),
+    api: { doc, getDoc, setDoc, collection, query, where, getDocs,
+           onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+           GoogleAuthProvider, signInWithPopup, signOut }
+  };
+} catch (e) { window.LVDVS_FB_ERROR = e; }
 </script>
 <script>
 /* ===========================================================================
@@ -988,21 +1015,115 @@ function LocalStore(){
 const FIREBASE_ENABLED = (typeof window !== "undefined" && window.LVDVS_FIREBASE_CONFIG &&
                           window.LVDVS_FIREBASE_CONFIG.apiKey);
 
-const kv = FIREBASE_ENABLED ? LocalStore() : (localStorageWorks() ? LocalStore() : MemoryStore());
+const kv = localStorageWorks() ? LocalStore() : MemoryStore();
 
 /* Data access keyed by user. Single shared local user in local/memory mode;
    the same shapes back the cloud model, so the dashboard renders identically. */
 const DB = {
   profile(uid){ return kv.getJSON("lvdvs:profile:"+uid, null); },
-  setProfile(uid,p){ kv.setJSON("lvdvs:profile:"+uid, p); },
+  setProfile(uid,p){ kv.setJSON("lvdvs:profile:"+uid, p); Cloud.push("profile", p); },
   progress(uid){ return kv.getJSON("lvdvs:progress:"+uid, { items:{}, stats:{}, streak:0, lastDay:null, totalSeen:0, totalCorrect:0 }); },
-  setProgress(uid,p){ kv.setJSON("lvdvs:progress:"+uid, p); },
+  setProgress(uid,p){ kv.setJSON("lvdvs:progress:"+uid, p); Cloud.push("progress", p); },
   classes(){ return kv.getJSON("lvdvs:classes", []); },
-  setClasses(c){ kv.setJSON("lvdvs:classes", c); },
+  setClasses(c){ kv.setJSON("lvdvs:classes", c); Cloud.push("classes", c); },
   assignments(){ return kv.getJSON("lvdvs:assignments", []); },
-  setAssignments(a){ kv.setJSON("lvdvs:assignments", a); },
+  setAssignments(a){ kv.setJSON("lvdvs:assignments", a); Cloud.push("assignments", a); },
   attempts(){ return kv.getJSON("lvdvs:attempts", []); },
-  setAttempts(a){ kv.setJSON("lvdvs:attempts", a); }
+  setAttempts(a){ kv.setJSON("lvdvs:attempts", a); Cloud.push("attempts", a); }
+};
+
+/* ---------------------------------------------------------------------------
+   1b. Firebase adapter (active only when SDK + config are present).
+   Pattern: local cache is the source the synchronous UI reads; Firestore is
+   hydrated into that cache on login and written through on every change.
+--------------------------------------------------------------------------- */
+const Cloud = {
+  active:false, fb:null, pendingSignup:null,
+  waitForSDK(){
+    if(window.LVDVS_FB) return Promise.resolve(window.LVDVS_FB);
+    return new Promise((resolve,reject)=>{
+      let waited=0; const iv=setInterval(()=>{
+        if(window.LVDVS_FB){ clearInterval(iv); resolve(window.LVDVS_FB); }
+        else if(window.LVDVS_FB_ERROR){ clearInterval(iv); reject(window.LVDVS_FB_ERROR); }
+        else if((waited+=60) > 9000){ clearInterval(iv); reject(new Error("Firebase SDK load timeout")); }
+      },60);
+    });
+  },
+  async start(onUser){
+    this.fb = await this.waitForSDK();
+    this.active = true;
+    const { auth, api } = this.fb;
+    api.onAuthStateChanged(auth, async (user)=>{
+      if(!user){ state.user=null; onUser(null); return; }
+      const profile = await this.loadOrCreateProfile(user);
+      kv.setJSON("lvdvs:profile:"+profile.uid, profile);
+      state.user = profile;
+      await this.hydrate(profile);
+      onUser(profile);
+    });
+  },
+  async loadOrCreateProfile(user){
+    const { db, api } = this.fb;
+    const ref = api.doc(db, "users", user.uid);
+    let snap=null; try{ snap = await api.getDoc(ref); }catch(e){}
+    if(snap && snap.exists && snap.exists()){
+      const d = snap.data();
+      return { uid:user.uid, displayName:d.displayName||user.email, email:user.email, role:d.role||"student", classIds:d.classIds||[] };
+    }
+    const su = this.pendingSignup || {};
+    const profile = { uid:user.uid, displayName:su.displayName||user.email, email:user.email, role:su.role||"student", classIds:[] };
+    try{ await api.setDoc(ref, { displayName:profile.displayName, email:profile.email, role:profile.role, classIds:[] }); }catch(e){}
+    this.pendingSignup = null;
+    return profile;
+  },
+  async hydrate(profile){
+    const { db, api } = this.fb;
+    try{ const ps=await api.getDoc(api.doc(db,"progress",profile.uid)); if(ps&&ps.exists&&ps.exists()) kv.setJSON("lvdvs:progress:"+profile.uid, ps.data()); }catch(e){}
+    let classes=[];
+    try{
+      if(profile.role==="teacher"){
+        const qs=await api.getDocs(api.query(api.collection(db,"classes"), api.where("teacherId","==",profile.uid)));
+        qs.forEach(d=>classes.push(d.data()));
+        for(const c of classes){
+          try{ const us=await api.getDocs(api.query(api.collection(db,"users"), api.where("classIds","array-contains",c.id)));
+               c.enrolled=[]; us.forEach(u=>{ const d=u.data(); c.enrolled.push({uid:u.id, displayName:d.displayName||u.id}); }); }catch(e){ c.enrolled=[]; }
+        }
+      } else {
+        for(const cid of (profile.classIds||[])){ const cs=await api.getDoc(api.doc(db,"classes",cid)); if(cs&&cs.exists&&cs.exists()) classes.push(cs.data()); }
+      }
+    }catch(e){}
+    kv.setJSON("lvdvs:classes", classes);
+    let assignments=[];
+    try{ for(const c of classes){ const qs=await api.getDocs(api.query(api.collection(db,"assignments"), api.where("classId","==",c.id))); qs.forEach(d=>assignments.push(d.data())); } }catch(e){}
+    kv.setJSON("lvdvs:assignments", assignments);
+    let attempts=[];
+    try{
+      if(profile.role==="teacher"){ for(const a of assignments){ const qs=await api.getDocs(api.query(api.collection(db,"attempts"), api.where("assignmentId","==",a.id))); qs.forEach(d=>attempts.push(d.data())); } }
+      else { const qs=await api.getDocs(api.query(api.collection(db,"attempts"), api.where("studentUid","==",profile.uid))); qs.forEach(d=>attempts.push(d.data())); }
+    }catch(e){}
+    kv.setJSON("lvdvs:attempts", attempts);
+  },
+  async refreshTeacher(){ if(this.active && state.user && state.user.role==="teacher") await this.hydrate(state.user); },
+  async findClassByJoinCode(code){
+    const { db, api } = this.fb;
+    try{ const qs=await api.getDocs(api.query(api.collection(db,"classes"), api.where("joinCode","==",code))); let found=null; qs.forEach(d=>{ if(!found) found=d.data(); }); return found; }
+    catch(e){ return null; }
+  },
+  push(kind, payload){
+    if(!this.active || !this.fb) return;
+    const { db, api } = this.fb;
+    try{
+      if(kind==="profile") api.setDoc(api.doc(db,"users",payload.uid), { displayName:payload.displayName, email:payload.email||null, role:payload.role, classIds:payload.classIds||[] });
+      else if(kind==="progress" && state.user) api.setDoc(api.doc(db,"progress",state.user.uid), payload);
+      else if(kind==="classes") payload.forEach(c=> api.setDoc(api.doc(db,"classes",c.id), { id:c.id, name:c.name, teacherId:c.teacherId, joinCode:c.joinCode }));
+      else if(kind==="assignments") payload.forEach(a=> api.setDoc(api.doc(db,"assignments",a.id), a));
+      else if(kind==="attempts") payload.forEach(t=> api.setDoc(api.doc(db,"attempts",t.id), t));
+    }catch(e){}
+  },
+  signIn(email,pw){ const {auth,api}=this.fb; return api.signInWithEmailAndPassword(auth,email,pw); },
+  signUp(email,pw,displayName,role){ this.pendingSignup={displayName,role}; const {auth,api}=this.fb; return api.createUserWithEmailAndPassword(auth,email,pw); },
+  google(){ const {auth,api}=this.fb; return api.signInWithPopup(auth, new api.GoogleAuthProvider()); },
+  signOut(){ const {auth,api}=this.fb; return api.signOut(auth); }
 };
 
 /* ---------------------------------------------------------------------------
@@ -1020,6 +1141,7 @@ const state = {
 
 /* current signed-in user (local default profile auto-created) */
 function ensureLocalUser(){
+  if(FIREBASE_ENABLED) return;
   let p = DB.profile("local");
   if(!p){ p = { uid:"local", displayName:"Student", role:"student", classIds:[] }; DB.setProfile("local", p); }
   state.user = p;
@@ -1447,7 +1569,9 @@ function topbar(){
   });
   const acct = el("div",{class:"acct"},
     el("span",{class:"who"}, `${state.user.displayName} · ${state.user.role}`),
-    el("button",{class:"linklike", title:"Switch role (demo)", onclick:toggleRole}, "switch role"),
+    Cloud.active
+      ? el("button",{class:"linklike", onclick:()=>Cloud.signOut()}, "sign out")
+      : el("button",{class:"linklike", title:"Switch role (demo)", onclick:toggleRole}, "switch role"),
     el("button",{class:"iconbtn", title:"Toggle theme", onclick:toggleTheme}, state.settings.theme==="dark"?"☼":"☾")
   );
   return el("header",{class:"topbar"},
@@ -1460,6 +1584,7 @@ function persistSettings(){ kv.setJSON("lvdvs:settings", state.settings); }
 
 function renderApp(){
   const r = root(); r.innerHTML = "";
+  if(FIREBASE_ENABLED && !state.user){ if(Cloud.active) renderAuth(r); else renderLoading(r); return; }
   r.appendChild(topbar());
   const main = el("main",{class:"main"});
   r.appendChild(main);
@@ -1467,6 +1592,44 @@ function renderApp(){
   else if(state.view==="drill") renderDrill(main);
   else if(state.view==="progress") renderProgress(main);
   else if(state.view==="class") renderClass(main);
+}
+
+/* ---------- auth (Firebase mode) ---------- */
+let authMode = "signin";
+function renderLoading(r){ r.appendChild(el("div",{class:"loading"}, "Connecting…")); }
+function renderAuth(r){
+  const wrap = el("div",{class:"authwrap"});
+  const card = el("section",{class:"authcard"});
+  card.appendChild(el("div",{class:"brand", style:"margin-bottom:18px"},
+    el("span",{class:"wordmark"},"LVDVS"), el("span",{class:"tagline"},"VCE Latin trainer")));
+  card.appendChild(el("h1",{}, authMode==="signin"?"Sign in":"Create account"));
+  card.appendChild(el("p",{class:"sub"}, authMode==="signin"?"Welcome back.":"Set up your account."));
+  const email = el("input",{class:"text", type:"email", placeholder:"Email", autocomplete:"username"});
+  const pw = el("input",{class:"text", type:"password", placeholder:"Password", autocomplete:"current-password"});
+  card.appendChild(email); card.appendChild(pw);
+  let name, roleSel;
+  if(authMode==="signup"){
+    name = el("input",{class:"text", placeholder:"Display name"});
+    roleSel = el("select",{class:"parse-select", style:"width:100%; margin-bottom:10px"},
+      el("option",{value:"student"},"Student"), el("option",{value:"teacher"},"Teacher"));
+    card.appendChild(name); card.appendChild(roleSel);
+  }
+  const err = el("div",{class:"vline err", style:"display:none; text-align:left"});
+  function fail(e){ err.style.display="block"; err.textContent = (e&&e.message)? e.message.replace(/^Firebase:\s*/,"") : "Something went wrong."; }
+  card.appendChild(err);
+  card.appendChild(el("button",{class:"primary big", style:"width:100%; margin-top:6px", onclick:()=>{
+    err.style.display="none";
+    const p = authMode==="signin"
+      ? Cloud.signIn(email.value.trim(), pw.value)
+      : Cloud.signUp(email.value.trim(), pw.value, name.value.trim()||email.value.trim(), roleSel.value);
+    p.catch(fail);
+  }}, authMode==="signin"?"Sign in":"Create account"));
+  card.appendChild(el("button",{class:"ghost gbtn", onclick:()=>{ err.style.display="none"; Cloud.google().catch(fail); }}, "Continue with Google"));
+  card.appendChild(el("div",{class:"authrow"},
+    el("span",{class:"small muted"}, authMode==="signin"?"No account yet?":"Already have one?"),
+    el("button",{class:"authtoggle", onclick:()=>{ authMode = authMode==="signin"?"signup":"signin"; renderApp(); }}, authMode==="signin"?"Create one":"Sign in")));
+  wrap.appendChild(card); r.appendChild(wrap);
+  setTimeout(()=>email.focus(),30);
 }
 
 /* ---------- home / setup ---------- */
@@ -1692,7 +1855,7 @@ function verdictLine(verdict, answer){
   if(verdict==="macron") return el("div",{class:"vline warn"}, el("b",{},"Macron length off."), el("span",{}," The answer is "), el("span",{class:"lat"}, answer));
   return el("div",{class:"vline err"}, el("b",{},"Not quite."), el("span",{}," The answer is "), el("span",{class:"lat"}, answer));
 }
-function advance(){ const s=state.session; if(s.done) return; nextQuestion(); renderApp(); }
+function advance(){ const s=state.session; if(s.done){ renderApp(); return; } nextQuestion(); renderApp(); }
 
 function parseSelectors(q){
   const node = el("div",{class:"parsegrid"});
@@ -1828,7 +1991,10 @@ function renderClass(main){
       el("b",{},"Local mode. "),
       "Accounts, cross-device sync and live student monitoring activate once Firebase config is added (see the build notes). Below works locally for one user; the same screens populate with real class data when the backend is connected."));
   }
-  if(state.user.role==="teacher") renderTeacher(main); else renderStudent(main);
+  if(state.user.role==="teacher"){
+    if(Cloud.active && !state._teacherSynced){ state._teacherSynced=true; Cloud.refreshTeacher().then(()=>renderApp()); }
+    renderTeacher(main);
+  } else renderStudent(main);
 }
 
 function renderTeacher(main){
@@ -1846,9 +2012,10 @@ function renderTeacher(main){
     el("button",{class:"primary", onclick:()=>{ if(!cname.value.trim())return; const c={id:uid4(),name:cname.value.trim(),teacherId:state.user.uid,joinCode:uid4().toUpperCase(),students:[]}; const arr=DB.classes(); arr.push(c); DB.setClasses(arr); renderApp(); }}, "Create class")));
   if(!classes.length) cc.appendChild(el("p",{class:"muted small"},"No classes yet."));
   classes.forEach(c=>{
+    const count = c.enrolled ? c.enrolled.length : (c.students ? c.students.length : 0);
     cc.appendChild(el("div",{class:"classrow"},
       el("div",{}, el("b",{},c.name), el("span",{class:"muted small"}, `  join code: `), el("code",{class:"code"}, c.joinCode)),
-      el("span",{class:"muted small"}, `${c.students.length} student${c.students.length===1?"":"s"}`)));
+      el("span",{class:"muted small"}, `${count} student${count===1?"":"s"}`)));
   });
   main.appendChild(cc);
 
@@ -1884,22 +2051,25 @@ function renderTeacher(main){
   // roster accuracy
   const rc = el("section",{class:"card"});
   rc.appendChild(el("h2",{class:"cardh"},"Roster — accuracy"));
+  if(Cloud.active){
+    rc.appendChild(el("button",{class:"ghost", style:"margin-bottom:12px", onclick:()=>{ state._teacherSynced=false; Cloud.refreshTeacher().then(()=>renderApp()); }}, "Refresh from cloud"));
+  }
   const roster = rosterRows(classes, attempts);
-  if(!roster.length) rc.appendChild(el("p",{class:"muted small"}, FIREBASE_ENABLED? "No student attempts yet." : "Local mode shows only your own attempts. Connect Firebase for a full roster."));
+  if(!roster.length) rc.appendChild(el("p",{class:"muted small"}, Cloud.active? "No students enrolled or no attempts yet." : "Local mode shows only your own attempts. Connect Firebase for a full roster."));
   else {
     const t = el("table",{class:"roster"});
     t.appendChild(el("tr",{}, el("th",{},"Student"), el("th",{},"Attempts"), el("th",{},"Avg accuracy")));
-    roster.forEach(r=> t.appendChild(el("tr",{}, el("td",{}, r.name), el("td",{}, String(r.n)), el("td",{}, r.avg+"%"))));
+    roster.forEach(r=> t.appendChild(el("tr",{}, el("td",{}, r.name), el("td",{}, String(r.n)), el("td",{}, r.avg==null? "—" : r.avg+"%"))));
     rc.appendChild(t);
   }
   main.appendChild(rc);
 }
 function labeled(l,node){ return el("label",{class:"pcell"}, el("span",{class:"pl small muted"}, l), node); }
 function rosterRows(classes, attempts){
-  // local mode: aggregate the local user's attempts; cloud mode would group by student uid
-  const byStudent = {};
-  attempts.forEach(t=>{ const key=t.studentName||state.user.displayName; (byStudent[key]=byStudent[key]||[]).push(t); });
-  return Object.entries(byStudent).map(([name,arr])=>({ name, n:arr.length, avg:Math.round(arr.reduce((s,t)=>s+t.pct,0)/arr.length) }));
+  const byId = {}; // id -> {name, list:[]}
+  classes.forEach(c=> (c.enrolled||[]).forEach(s=>{ byId[s.uid] = byId[s.uid] || { name:s.displayName||s.uid, list:[] }; }));
+  attempts.forEach(t=>{ const id=t.studentUid||t.studentName; byId[id] = byId[id] || { name:t.studentName||id, list:[] }; byId[id].list.push(t); });
+  return Object.values(byId).map(s=>({ name:s.name, n:s.list.length, avg: s.list.length? Math.round(s.list.reduce((a,t)=>a+t.pct,0)/s.list.length) : null }));
 }
 
 function renderStudent(main){
@@ -1912,11 +2082,18 @@ function renderStudent(main){
   const jc = el("section",{class:"card"});
   jc.appendChild(el("h2",{class:"cardh"},"Join a class"));
   const code = el("input",{class:"text", placeholder:"Enter join code"});
-  jc.appendChild(el("div",{class:"inputrow"}, code, el("button",{class:"primary", onclick:()=>{
-    const c = DB.classes().find(x=>x.joinCode===code.value.trim().toUpperCase());
+  jc.appendChild(el("div",{class:"inputrow"}, code, el("button",{class:"primary", onclick:async ()=>{
+    const codeVal = code.value.trim().toUpperCase();
+    let c;
+    if(Cloud.active){ c = await Cloud.findClassByJoinCode(codeVal); }
+    else { c = DB.classes().find(x=>x.joinCode===codeVal); }
     if(!c){ alertInline(jc,"No class with that code."); return; }
     me.classIds = Array.from(new Set([...(me.classIds||[]), c.id])); DB.setProfile(me.uid, me);
-    const arr=DB.classes(); const cc=arr.find(x=>x.id===c.id); if(!cc.students.includes(me.uid)) cc.students.push(me.uid); DB.setClasses(arr);
+    if(Cloud.active){
+      await Cloud.hydrate(me); // re-pull classes/assignments now that classIds changed
+    } else {
+      const arr=DB.classes(); const cc=arr.find(x=>x.id===c.id); if(cc && !cc.students.includes(me.uid)) cc.students.push(me.uid); DB.setClasses(arr);
+    }
     renderApp();
   }}, "Join")));
   joined.forEach(c=> jc.appendChild(el("div",{class:"classrow"}, el("b",{},c.name))));
@@ -1942,7 +2119,7 @@ function alertInline(parent,msg){ parent.appendChild(el("div",{class:"vline warn
 
 function startAssignment(a){
   state.session = { module:a.module, scope:a.scope, mode:"quiz", n:0, correct:0, target:a.count, done:false, assignmentId:a.id, onDone:(pct)=>{
-    const arr=DB.attempts(); arr.push({ id:uid4(), assignmentId:a.id, studentName:state.user.displayName, pct, when:now() }); DB.setAttempts(arr);
+    const arr=DB.attempts(); arr.push({ id:uid4(), assignmentId:a.id, studentUid:state.user.uid, studentName:state.user.displayName, pct, when:now() }); DB.setAttempts(arr);
   }, current:null };
   // wrap end to record attempt
   nextQuestion(); setView("drill");
@@ -1962,8 +2139,19 @@ function boot(){
   const saved = kv.getJSON("lvdvs:settings", null);
   if(saved) state.settings = Object.assign(state.settings, saved);
   document.documentElement.setAttribute("data-theme", state.settings.theme);
-  ensureLocalUser();
-  renderApp();
+  if(FIREBASE_ENABLED){
+    renderApp(); // shows "Connecting…" until auth resolves
+    Cloud.start((user)=>{ state._teacherSynced=false; renderApp(); })
+         .catch(()=>{ Cloud.active=false; ensureLocalUserForced(); renderApp(); });
+  } else {
+    ensureLocalUser();
+    renderApp();
+  }
+}
+function ensureLocalUserForced(){
+  let p = DB.profile("local");
+  if(!p){ p = { uid:"local", displayName:"Student", role:"student", classIds:[] }; kv.setJSON("lvdvs:profile:local", p); }
+  state.user = p;
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
