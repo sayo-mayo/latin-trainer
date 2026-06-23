@@ -2021,6 +2021,19 @@ function paradigmGerundive(gd, g, hi){
 }
 
 /* ---- whole-table drills (fill every cell) ---- */
+const GHEAD = { m:"Masc.", f:"Fem.", n:"Neut." };
+function capNum(num){ const l=NUM_LABEL[num]||num; return l.charAt(0).toUpperCase()+l.slice(1); }
+/* gendered paradigm → one table per number, rows = cases, columns = M/F/N */
+function genderedTables(decl, itemKeyFn, cat){
+  return N.NUMS.map(num=>({
+    caption: capNum(num),
+    colHeads: ["m","f","n"].map(g=>GHEAD[g]),
+    rows: N.CASES.map(cas=>({
+      label:N.CASE_LABEL[cas], caseTag:cas,
+      cells:["m","f","n"].map(g=>({ answer: decl[g] && decl[g][num] ? decl[g][num][cas] : undefined, itemKey:itemKeyFn(g,num,cas), category:cat }))
+    })).filter(r=> r.cells.some(c=>c.answer))
+  })).filter(t=> t.rows.length);
+}
 function genDeclineTable(sel){
   const e = nounEntry(rand(pickScopeKeys("decline", sel))); const d = N.declineNoun(e);
   const cat = "decline:"+e.decl;
@@ -2035,13 +2048,10 @@ function genAdjTable(sel){
   const e = adjEntry(rand(pickScopeKeys("adjadv", sel)));
   const d = e.type==="adj1"?N.declineAdj1(e.m,e.f,e.n):N.declineAdj3(e.nom,e.stem);
   const cat = "adj:"+e.type;
-  const tables = ["m","f","n"].map(g=>({ caption:GEN_LABEL[g], colHeads:["singular","plural"],
-    rows:N.CASES.map(cas=>({ label:N.CASE_LABEL[cas], caseTag:cas, cells:[
-      { answer:d[g].sg[cas], itemKey:`adj:${e.key}:${g}:${cas}:sg`, category:cat },
-      { answer:d[g].pl[cas], itemKey:`adj:${e.key}:${g}:${cas}:pl`, category:cat } ]})) }));
   return { kind:"table", category:cat, eyebrow:`Full table · adjective`,
-    prompt:`Decline <span class="lat">${adjCitation(e)}</span> <span class="muted">(${e.gloss})</span> — all three genders`,
-    tables, lemma:e, paradigm:()=>paradigmAdj(e,"m",{}) };
+    prompt:`Decline <span class="lat">${adjCitation(e)}</span> <span class="muted">(${e.gloss})</span> — all genders`,
+    tables: genderedTables(d, (g,num,cas)=>`adj:${e.key}:${g}:${cas}:${num}`, cat),
+    lemma:e, paradigm:()=>paradigmAdj(e,"m",{}) };
 }
 function genParticipleTable(sel){
   const keys = pickScopeKeys("participles", sel);
@@ -2050,26 +2060,23 @@ function genParticipleTable(sel){
   do{ e=verbEntry(rand(keys)); v=N.conjugateVerb(e); const avail=wantTypes.filter(t=>participleForms(v,t)); type=avail.length?rand(avail):null; pf=type?participleForms(v,type):null; guard++; } while(!pf&&guard<40);
   if(!pf){ e=LEX.verbs.find(x=>!x.irregular)||LEX.verbs[0]; v=N.conjugateVerb(e); type="present"; pf=participleForms(v,"present"); }
   const cat="participle:"+type;
-  const tables=["m","f","n"].map(g=>({ caption:GEN_LABEL[g], colHeads:["singular","plural"],
-    rows:N.CASES.map(cas=>({ label:N.CASE_LABEL[cas], caseTag:cas, cells:[
-      { answer:pf.decl[g].sg[cas], itemKey:`ppl:${e.key}:${type}:${g}:${cas}:sg`, category:cat },
-      { answer:pf.decl[g].pl[cas], itemKey:`ppl:${e.key}:${type}:${g}:${cas}:pl`, category:cat } ]})) }));
   return { kind:"table", category:cat, eyebrow:`Full table · ${type} participle`,
-    prompt:`Decline the <b>${type} participle</b> of <span class="lat">${e.cite}</span> — all three genders`,
-    tables, lemma:e, paradigm:()=>paradigmParticiple(pf,type,"m",{}) };
+    prompt:`Decline the <b>${type} participle</b> of <span class="lat">${e.cite}</span> — all genders`,
+    tables: genderedTables(pf.decl, (g,num,cas)=>`ppl:${e.key}:${type}:${g}:${cas}:${num}`, cat),
+    lemma:e, paradigm:()=>paradigmParticiple(pf,type,"m",{}) };
 }
 function genPronounTable(sel){
   const key = rand(pickScopeKeys("pronoun", sel)); const p = N.declinePronoun(key); const cat="pronoun";
-  function tableFor(formsByNum, gtag){
-    const nums = N.NUMS.filter(n=>formsByNum[n]);
-    const rows = N.CASES.map(cas=>({ label:N.CASE_LABEL[cas], caseTag:cas,
-      cells:nums.map(n=>({ answer:formsByNum[n][cas], itemKey:`pron:${key}:${gtag||"-"}:${cas}:${n}`, category:cat })) }))
-      .filter(r=> r.cells.some(c=>c.answer));
-    return { colHeads:nums.map(n=>NUM_LABEL[n]), rows };
-  }
   let tables;
-  if(p.g) tables = ["m","f","n"].map(g=>Object.assign({caption:GEN_LABEL[g]}, tableFor(p.forms[g], g)));
-  else    tables = [ tableFor(p.forms, "-") ];
+  if(p.g){
+    tables = genderedTables(p.forms, (g,num,cas)=>`pron:${key}:${g}:${cas}:${num}`, cat);
+  } else {
+    const nums = N.NUMS.filter(n=>p.forms[n]);
+    tables = [{ colHeads:nums.map(n=>NUM_LABEL[n]),
+      rows:N.CASES.map(cas=>({ label:N.CASE_LABEL[cas], caseTag:cas,
+        cells:nums.map(n=>({ answer:p.forms[n][cas], itemKey:`pron:${key}:-:${cas}:${n}`, category:cat })) }))
+        .filter(r=> r.cells.some(c=>c.answer)) }];
+  }
   return { kind:"table", category:cat, eyebrow:`Full table · pronoun`,
     prompt:`Decline <span class="lat">${pronCitation(key)}</span> <span class="muted">(${p.gloss})</span> — every form`,
     tables, lemma:{key}, paradigm:()=>paradigmPronoun(key, p.g?"m":null, {}) };
@@ -2099,6 +2106,26 @@ function genConjugateTable(sel){
     prompt:`Conjugate <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span> — <b>${TENSE_LABEL[tense]} ${mood} ${voiceTxt}</b>`,
     tables:[{ colHeads:["singular","plural"], rows }], lemma:e,
     paradigm:()=>paradigmVerbCell(e,{tense,mood,voice,person:"1",number:"sg"}) };
+}
+function genGerundTable(sel){
+  const keys = pickScopeKeys("gerunds", sel);
+  const wantTypes = (sel.types&&sel.types.length ? SCOPE.gerunds.typeGroups.filter(t=>sel.types.includes(t.id)) : SCOPE.gerunds.typeGroups).map(t=>t.type);
+  let e, v, type=null, guard=0;
+  do{ e=verbEntry(rand(keys)); v=N.conjugateVerb(e); const avail=wantTypes.filter(t=> t==="gerund"?gerundForms(v):gerundiveDecl(v)); type=avail.length?rand(avail):null; guard++; } while(!type && guard<40);
+  if(!type){ e=LEX.verbs.find(x=>!x.irregular)||LEX.verbs[0]; v=N.conjugateVerb(e); type="gerundive"; }
+  if(type==="gerundive"){
+    const gd=gerundiveDecl(v); const cat="gerund:gerundive";
+    return { kind:"table", category:cat, eyebrow:`Full table · gerundive`,
+      prompt:`Decline the <b>gerundive</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span> — all genders`,
+      tables: genderedTables(gd.decl, (g,num,cas)=>`gerv:${e.key}:${g}:${cas}:${num}`, cat),
+      lemma:e, paradigm:()=>paradigmGerundive(gd,"m",{}) };
+  }
+  const g=gerundForms(v)||{}; const cat="gerund:gerund";
+  const rows = ["gen","dat","acc","abl"].filter(c=>g[c]).map(c=>({ label:N.CASE_LABEL[c], caseTag:c,
+    cells:[{ answer:g[c], itemKey:`ger:${e.key}:${c}`, category:cat }] }));
+  return { kind:"table", category:cat, eyebrow:`Full table · gerund`,
+    prompt:`Give every case of the <b>gerund</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span>`,
+    tables:[{ caption:"Gerund", colHeads:["form"], rows }], lemma:e, paradigm:()=>paradigmGerund(v,e) };
 }
 
 function genPronoun(sel){
@@ -2191,7 +2218,7 @@ function generate(session){
     case "pronoun": return tbl? genPronounTable(sel) : genPronoun(sel);
     case "participles": return tbl? genParticipleTable(sel) : genParticiple(sel);
     case "infinitives": return genInfinitive(sel);
-    case "gerunds": return genGerund(sel);
+    case "gerunds": return tbl? genGerundTable(sel) : genGerund(sel);
     case "parse": return genParse(sel);
     case "translate": return genTranslate();
   }
@@ -2448,7 +2475,7 @@ function scopeControls(module, store, onChange){
     box.appendChild(subhead("Form"));
     box.appendChild(checkGroup(cfg.typeGroups, sc, "types", onChange));
   }
-  if(["decline","adjadv","participles","pronoun","conjugate"].includes(module)){
+  if(["decline","adjadv","participles","pronoun","conjugate","gerunds"].includes(module)){
     box.appendChild(subhead("Drill"));
     const fr = el("div",{class:"chooser"});
     [["single","Single forms"],["table",module==="conjugate"?"Full table (6 forms)":"Whole table"]].forEach(([v,l])=>
