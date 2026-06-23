@@ -1892,7 +1892,7 @@ function toggleRole(){ state.user.role = state.user.role==="teacher"?"student":"
 function persistSettings(){ kv.setJSON("lvdvs:settings", state.settings); }
 
 function renderApp(){
-  const r = root(); r.innerHTML = "";
+  const r = root(); r.innerHTML = ""; document.onkeydown = null;
   if(FIREBASE_ENABLED && !state.user){ if(Cloud.active) renderAuth(r); else renderLoading(r); return; }
   r.appendChild(topbar());
   const main = el("main",{class:"main"});
@@ -1951,6 +1951,7 @@ const DEFAULT_SCOPE = {
   translate:{}
 };
 const setupChoice = { module:"decline", scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)), mode:"practice" };
+const asgChoice = { title:"", classId:"", module:"decline", count:15, scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)) };
 
 function renderHome(main){
   main.innerHTML = "";
@@ -1971,7 +1972,7 @@ function renderHome(main){
   });
   card.appendChild(field("Module", modRow));
   // scope controls
-  card.appendChild(scopeControls(setupChoice.module, main));
+  card.appendChild(scopeControls(setupChoice.module, setupChoice.scope, ()=>renderHome(main)));
   // mode
   const modeRow = el("div",{class:"chooser"});
   [["practice","Practice (endless, instant feedback)"],["quiz","Quiz ("+state.settings.quizCount+" questions, scored)"]].forEach(([v,l])=>{
@@ -1985,55 +1986,52 @@ function renderHome(main){
 function stat(v,l){ return el("div",{class:"stat"}, el("span",{class:"statn"}, String(v)), el("span",{class:"statl"}, l)); }
 function field(label, node){ return el("div",{class:"fieldrow"}, el("div",{class:"fieldlabel"}, label), node); }
 
-function scopeControls(module, main){
-  const cfg = SCOPE[module]; const sc = setupChoice.scope[module] || (setupChoice.scope[module]={});
+function scopeControls(module, store, onChange){
+  const cfg = SCOPE[module]; const sc = store[module] || (store[module]={});
   const box = el("div",{class:"scope"});
-  if(module==="syntax" || module==="translate"){
-    box.appendChild(el("p",{class:"muted small"}, module==="syntax"
-      ? "Identify the dominant construction in each sentence."
-      : "Read each sentence, translate it, then reveal the model and mark yourself."));
+  if(module==="translate"){
+    box.appendChild(el("p",{class:"muted small"}, "Read each sentence, translate it, then reveal the model and mark yourself."));
     return field("Scope", box);
   }
   if(module==="parse"){
     const pm = el("div",{class:"chooser"});
     [["decline","Nouns"],["adjadv","Adjectives"],["pronoun","Pronouns"],["conjugate","Verbs"]].forEach(([v,l])=>{
-      pm.appendChild(el("button",{class:"choice small"+((sc.parseModule||"decline")===v?" sel":""), onclick:()=>{ sc.parseModule=v; sc.groups=DEFAULT_SCOPE[v==="decline"?"decline":v].groups.slice(); renderHome(main); }}, l));
+      pm.appendChild(el("button",{class:"choice small"+((sc.parseModule||"decline")===v?" sel":""), onclick:()=>{ sc.parseModule=v; sc.groups=DEFAULT_SCOPE[v==="decline"?"decline":v].groups.slice(); onChange(); }}, l));
     });
     box.appendChild(field("Parse from", pm));
     const srcMod = sc.parseModule||"decline";
-    box.appendChild(checkGroup(SCOPE[srcMod].groups, sc, "groups", main));
+    box.appendChild(checkGroup(SCOPE[srcMod].groups, sc, "groups", onChange));
     return field("Scope", box);
   }
-  // groups
-  box.appendChild(checkGroup(cfg.groups, sc, "groups", main));
+  box.appendChild(checkGroup(cfg.groups, sc, "groups", onChange));
   if(module==="conjugate"){
     box.appendChild(subhead("Tenses"));
-    box.appendChild(checkGroup(cfg.tenseGroups, sc, "tenses", main));
+    box.appendChild(checkGroup(cfg.tenseGroups, sc, "tenses", onChange));
     box.appendChild(subhead("Mood / voice"));
     const mv = el("div",{class:"checkrow"});
-    cfg.moods.forEach(o=> mv.appendChild(checkbox(o.label, sc, "moods", o.id, main)));
-    cfg.voices.forEach(o=> mv.appendChild(checkbox(o.label, sc, "voices", o.id, main)));
+    cfg.moods.forEach(o=> mv.appendChild(checkbox(o.label, sc, "moods", o.id, onChange)));
+    cfg.voices.forEach(o=> mv.appendChild(checkbox(o.label, sc, "voices", o.id, onChange)));
     box.appendChild(mv);
   }
   if(module==="adjadv"){
     box.appendChild(subhead("Tasks"));
-    box.appendChild(checkGroup(cfg.tasks, sc, "tasks", main));
+    box.appendChild(checkGroup(cfg.tasks, sc, "tasks", onChange));
   }
   return field("Scope", box);
 }
 function subhead(t){ return el("div",{class:"subhead"}, t); }
-function checkGroup(options, sc, field, main){
+function checkGroup(options, sc, fld, onChange){
   const row = el("div",{class:"checkrow"});
-  options.forEach(o=> row.appendChild(checkbox(o.label, sc, field, o.id, main)));
+  options.forEach(o=> row.appendChild(checkbox(o.label, sc, fld, o.id, onChange)));
   return row;
 }
-function checkbox(label, sc, field, id, main){
-  if(!Array.isArray(sc[field])) sc[field] = [];
-  const checked = sc[field].includes(id);
+function checkbox(label, sc, fld, id, onChange){
+  if(!Array.isArray(sc[fld])) sc[fld] = [];
+  const checked = sc[fld].includes(id);
   return el("label",{class:"chk"+(checked?" on":"")},
     el("input",{type:"checkbox", checked:checked?"checked":null, onchange:(e)=>{
-      const set = new Set(sc[field]); if(e.target.checked) set.add(id); else set.delete(id);
-      sc[field] = Array.from(set); renderHome(main);
+      const set = new Set(sc[fld]); if(e.target.checked) set.add(id); else set.delete(id);
+      sc[fld] = Array.from(set); onChange();
     }}), el("span",{}, label));
 }
 
@@ -2070,7 +2068,7 @@ function renderDrill(main){
   if(q.kind==="produce"){
     const input = el("input",{class:"answer-input lat", type:"text", autocomplete:"off", autocapitalize:"off", spellcheck:"false", placeholder:"type the form…"});
     const submit = el("button",{class:"primary", onclick:()=>submitProduce(q,input,feedback,submit)}, "Check");
-    input.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); if(!s.answered) submitProduce(q,input,feedback,submit); else advance(); } });
+    input.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); e.stopPropagation(); if(!s.answered) submitProduce(q,input,feedback,submit); } });
     answerArea.appendChild(el("div",{class:"inputrow"}, input, submit));
     setTimeout(()=>input.focus(),30);
   }
@@ -2136,6 +2134,7 @@ function submitProduce(q,input,feedback,submitBtn){
   feedback.innerHTML="";
   feedback.appendChild(verdictLine(verdict, q.answer));
   revealParadigm();
+  enableEnterAdvance();
   endOrContinue(s);
 }
 function verdictLine(verdict, answer){
@@ -2144,6 +2143,7 @@ function verdictLine(verdict, answer){
   return el("div",{class:"vline err"}, el("b",{},"Not quite."), el("span",{}," The answer is "), el("span",{class:"lat"}, answer));
 }
 function advance(){ const s=state.session; if(s.done){ renderApp(); return; } nextQuestion(); renderApp(); }
+function enableEnterAdvance(){ document.onkeydown = (e)=>{ if(e.key==="Enter"){ e.preventDefault(); advance(); } }; }
 function revealParadigm(){ const p=document.getElementById("paradigmRef"); if(p){ p.style.display=""; p.open=true; } }
 
 function parseSelectors(q){
@@ -2184,6 +2184,7 @@ function submitParse(q,sel,feedback,submitBtn){
   submitBtn.textContent="Next"; submitBtn.onclick=advance;
   for(const k in sel.sels) sel.sels[k].disabled=true;
   revealParadigm();
+  enableEnterAdvance();
   endOrContinue(s);
 }
 function describeAnalysis(a){
@@ -2206,6 +2207,7 @@ function markSelf(q,correct,feedback){
   const s=state.session; if(s.answered) return; s.answered=true;
   recordResult(q.itemKey,q.category,correct); s.n++; if(correct) s.correct++;
   feedback.appendChild(el("button",{class:"primary", onclick:advance}, "Next"));
+  enableEnterAdvance();
   endOrContinue(s);
 }
 function endOrContinue(s){ if(s.mode==="quiz" && s.n>=s.target){ s.done=true; } }
@@ -2314,18 +2316,23 @@ function renderTeacher(main){
   ca.appendChild(el("h2",{class:"cardh"},"Assignments"));
   if(!classes.length){ ca.appendChild(el("p",{class:"muted small"},"Create a class first.")); }
   else {
-    const title = el("input",{class:"text", placeholder:"Assignment title"});
-    const classSel = el("select",{class:"parse-select"}); classes.forEach(c=> classSel.appendChild(el("option",{value:c.id},c.name)));
-    const modSel = el("select",{class:"parse-select"}); Object.keys(SCOPE).forEach(m=> modSel.appendChild(el("option",{value:m},SCOPE[m].label)));
-    const count = el("input",{class:"text num", type:"number", value:"15", min:"5", max:"50"});
+    if(!classes.find(c=>c.id===asgChoice.classId)) asgChoice.classId = classes[0].id;
+    if(!SCOPE[asgChoice.module]) asgChoice.module = "decline";
+    const title = el("input",{class:"text", placeholder:"Assignment title", value:asgChoice.title, oninput:(e)=>{ asgChoice.title=e.target.value; }});
+    const classSel = el("select",{class:"parse-select", onchange:(e)=>{ asgChoice.classId=e.target.value; }});
+    classes.forEach(c=> classSel.appendChild(el("option",{value:c.id},c.name))); classSel.value=asgChoice.classId;
+    const modSel = el("select",{class:"parse-select", onchange:(e)=>{ asgChoice.module=e.target.value; renderApp(); }});
+    Object.keys(SCOPE).forEach(m=> modSel.appendChild(el("option",{value:m},SCOPE[m].label))); modSel.value=asgChoice.module;
+    const count = el("input",{class:"text num", type:"number", value:String(asgChoice.count), min:"5", max:"50", oninput:(e)=>{ asgChoice.count=parseInt(e.target.value,10)||15; }});
     ca.appendChild(el("div",{class:"formgrid"},
       labeled("Title", title), labeled("Class", classSel), labeled("Module", modSel), labeled("Questions", count)));
+    ca.appendChild(scopeControls(asgChoice.module, asgChoice.scope, ()=>renderApp()));
     ca.appendChild(el("button",{class:"primary", onclick:()=>{
-      if(!title.value.trim())return;
-      const a={ id:uid4(), title:title.value.trim(), classId:classSel.value, module:modSel.value,
-        scope: JSON.parse(JSON.stringify(DEFAULT_SCOPE[modSel.value]||{})), count: parseInt(count.value,10)||15,
-        createdBy: state.user.uid, created: now() };
-      const arr=DB.assignments(); arr.push(a); DB.setAssignments(arr); renderApp();
+      const t = title.value.trim(); if(!t) return;
+      const a={ id:uid4(), title:t, classId:classSel.value, module:asgChoice.module,
+        scope: JSON.parse(JSON.stringify(asgChoice.scope[asgChoice.module]||DEFAULT_SCOPE[asgChoice.module]||{})),
+        count: parseInt(count.value,10)||15, createdBy: state.user.uid, created: now() };
+      const arr=DB.assignments(); arr.push(a); DB.setAssignments(arr); asgChoice.title=""; title.value=""; renderApp();
     }}, "Create assignment"));
   }
   assignments.forEach(a=>{
@@ -2333,7 +2340,7 @@ function renderTeacher(main){
     const subs = attempts.filter(t=>t.assignmentId===a.id);
     const avg = subs.length? Math.round(subs.reduce((s,t)=>s+t.pct,0)/subs.length):null;
     ca.appendChild(el("div",{class:"classrow"},
-      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${a.count} Q · ${cls?cls.name:"—"}`)),
+      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q · ${cls?cls.name:"—"}`)),
       el("span",{class:"muted small"}, subs.length? `${subs.length} submitted · avg ${avg}%` : "no submissions")));
   });
   main.appendChild(ca);
@@ -2355,6 +2362,15 @@ function renderTeacher(main){
   main.appendChild(rc);
 }
 function labeled(l,node){ return el("label",{class:"pcell"}, el("span",{class:"pl small muted"}, l), node); }
+function scopeSummary(module, scope){
+  if(!scope) return "all";
+  if(module==="translate") return "translation";
+  let groupsCfg;
+  if(module==="parse"){ const sm=scope.parseModule||"decline"; groupsCfg=(SCOPE[sm]&&SCOPE[sm].groups)||[]; }
+  else groupsCfg = (SCOPE[module]&&SCOPE[module].groups)||[];
+  const labels = (scope.groups||[]).map(id=>{ const g=groupsCfg.find(x=>x.id===id); return g?g.label:id; });
+  return labels.length? labels.join(", ") : "all";
+}
 function rosterRows(classes, attempts){
   const byId = {}; // id -> {name, list:[]}
   classes.forEach(c=> (c.enrolled||[]).forEach(s=>{ byId[s.uid] = byId[s.uid] || { name:s.displayName||s.uid, list:[] }; }));
@@ -2398,7 +2414,7 @@ function renderStudent(main){
     const done = attempts.filter(t=>t.assignmentId===a.id && (t.studentName||me.displayName)===me.displayName);
     const best = done.length? Math.max(...done.map(t=>t.pct)):null;
     ac.appendChild(el("div",{class:"classrow"},
-      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${a.count} Q`)),
+      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q`)),
       el("div",{},
         best!=null? el("span",{class:"muted small"}, `best ${best}%  `) : null,
         el("button",{class:"primary small", onclick:()=>startAssignment(a)}, done.length?"Retry":"Start"))));
