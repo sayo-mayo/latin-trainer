@@ -248,16 +248,20 @@ table.roster tr:hover td{background:color-mix(in srgb,var(--surface-2) 50%, tran
 .rankbadge.r2{background:linear-gradient(160deg,#E3E6EA,var(--silver)); color:#3C4044; border-color:var(--silver)}
 .rankbadge.r3{background:linear-gradient(160deg,#E6BD93,var(--bronze)); color:#5A3818; border-color:var(--bronze)}
 
+.asg-listhead{margin:26px 0 14px; padding-top:18px; border-top:1px solid var(--line); font-family:var(--display); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
 /* teacher: per-assignment drill-down */
-.asg{border:1px solid var(--line); border-radius:12px; margin-bottom:10px; background:var(--surface); box-shadow:var(--shadow-sm)}
-.asg>summary{cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; flex-wrap:wrap; border-radius:12px}
+.asg{border:1px solid var(--line); border-radius:12px; margin-bottom:14px; background:var(--surface); box-shadow:var(--shadow-sm)}
+.asg>summary{cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; flex-wrap:wrap; border-radius:12px}
 .asg>summary::-webkit-details-marker{display:none}
-.asg>summary::before{content:"\25B8"; color:var(--faint); transition:transform .15s}
+.asg>summary::before{content:"\25B8"; color:var(--faint); transition:transform .15s; flex:0 0 auto; margin-top:1px}
 .asg[open]>summary::before{transform:rotate(90deg)}
 .asg[open]>summary{border-bottom:1px solid var(--line); background:var(--surface-2); border-radius:12px 12px 0 0}
 .asg>summary:hover{background:var(--surface-2)}
-.asg-main{display:flex; align-items:baseline; gap:2px; flex:1; min-width:200px}
-.asg .breakdown{margin:0; padding:4px 16px 14px; width:calc(100% - 0px)}
+.asg-main{display:flex; flex-direction:column; gap:5px; flex:1 1 auto; min-width:220px}
+.asg-main b{font-size:15px; line-height:1.25}
+.asg-scope{line-height:1.5}
+.asg-meta{flex:0 0 auto; white-space:nowrap; align-self:center}
+.asg .breakdown{margin:0; padding:10px 18px 18px}
 .asg .breakdown th:first-child, .asg .breakdown td:first-child{padding-left:2px}
 .asg .breakdown td:last-child, .asg .breakdown th:last-child{padding-right:2px}
 tr.nosub td{color:var(--muted)}
@@ -2915,6 +2919,7 @@ function renderTeacher(main){
       const arr=DB.assignments(); arr.push(a); DB.setAssignments(arr); asgChoice.title=""; title.value=""; renderApp();
     }}, "Create assignment"));
   }
+  if(assignments.length) ca.appendChild(el("div",{class:"asg-listhead"}, "Active assignments"));
   assignments.forEach(a=>{
     const cls = classes.find(c=>c.id===a.classId);
     const subs = attempts.filter(t=>t.assignmentId===a.id);
@@ -2922,7 +2927,7 @@ function renderTeacher(main){
     const det = el("details",{class:"asg"});
     det.appendChild(el("summary",{},
       el("div",{class:"asg-main"}, el("b",{},a.title),
-        el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q · ${cls?cls.name:"—"}`)),
+        el("span",{class:"asg-scope muted small"}, `${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q · ${cls?cls.name:"—"}`)),
       el("span",{class:"asg-meta muted small"}, subs.length? `${subs.length} submitted · avg ${avg}%` : "no submissions")));
     det.appendChild(assignmentBreakdown(a, cls, attempts));
     ca.appendChild(det);
@@ -2984,7 +2989,16 @@ function scopeSummary(module, scope){
   if(module==="parse"){ const sm=scope.parseModule||"decline"; groupsCfg=(SCOPE[sm]&&SCOPE[sm].groups)||[]; }
   else groupsCfg = (SCOPE[module]&&SCOPE[module].groups)||[];
   const labels = (scope.groups||[]).map(id=>{ const g=groupsCfg.find(x=>x.id===id); return g?g.label:id; });
-  return labels.length? labels.join(", ") : "all";
+  if(!labels.length) return "all";
+  if(groupsCfg.length && labels.length===groupsCfg.length) return "all";
+  // collapse a shared trailing word: "1st declension, 2nd declension" -> "1st, 2nd declension"
+  if(labels.length>1){
+    const parts = labels.map(l=>l.split(" "));
+    const last = parts[0][parts[0].length-1];
+    if(parts.every(p=>p.length>=2 && p[p.length-1]===last))
+      return parts.map(p=>p.slice(0,-1).join(" ")).join(", ") + " " + last;
+  }
+  return labels.join(", ");
 }
 function rosterRows(classes, attempts){
   const byId = {}; // id -> {name, list:[]}
