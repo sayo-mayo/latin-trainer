@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Latin Trainer</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Latin%20Trainer%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22tile%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231A8268%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230B5140%22%2F%3E%3C%2FlinearGradient%3E%3CclipPath%20id%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20rx%3D%2213%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%3Cg%20clip-path%3D%22url%28%23round%29%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20fill%3D%22url%28%23tile%29%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2222%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.06%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2245.5%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2C%27Times%20New%20Roman%27%2Cserif%22%20font-weight%3D%22700%22%20font-size%3D%2240%22%20fill%3D%22%23F4F1EA%22%3EL%3C%2Ftext%3E%3Crect%20x%3D%223%22%20y%3D%2253.4%22%20width%3D%2258%22%20height%3D%220.8%22%20fill%3D%22%23F4F1EA%22%20opacity%3D%220.5%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2255%22%20width%3D%229.67%22%20height%3D%226%22%20fill%3D%22%233FA68C%22%2F%3E%3Crect%20x%3D%2212.67%22%20y%3D%2255%22%20width%3D%229.67%22%20height%3D%226%22%20fill%3D%22%237E9E2A%22%2F%3E%3Crect%20x%3D%2222.33%22%20y%3D%2255%22%20width%3D%229.67%22%20height%3D%226%22%20fill%3D%22%23C98A12%22%2F%3E%3Crect%20x%3D%2232%22%20y%3D%2255%22%20width%3D%229.67%22%20height%3D%226%22%20fill%3D%22%23D86A2C%22%2F%3E%3Crect%20x%3D%2241.67%22%20y%3D%2255%22%20width%3D%229.67%22%20height%3D%226%22%20fill%3D%22%23C8385C%22%2F%3E%3Crect%20x%3D%2251.33%22%20y%3D%2255%22%20width%3D%229.67%22%20height%3D%226%22%20fill%3D%22%233F74D6%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20rx%3D%2213%22%20fill%3D%22none%22%20stroke%3D%22%23000000%22%20stroke-opacity%3D%220.10%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -246,6 +247,25 @@ table.roster tr:hover td{background:color-mix(in srgb,var(--surface-2) 50%, tran
 .rankbadge.r1{background:linear-gradient(160deg,#F4D77A,var(--gold)); color:#5A4410; border-color:var(--gold)}
 .rankbadge.r2{background:linear-gradient(160deg,#E3E6EA,var(--silver)); color:#3C4044; border-color:var(--silver)}
 .rankbadge.r3{background:linear-gradient(160deg,#E6BD93,var(--bronze)); color:#5A3818; border-color:var(--bronze)}
+
+/* teacher: per-assignment drill-down */
+.asg{border:1px solid var(--line); border-radius:12px; margin-bottom:10px; background:var(--surface); box-shadow:var(--shadow-sm)}
+.asg>summary{cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; flex-wrap:wrap; border-radius:12px}
+.asg>summary::-webkit-details-marker{display:none}
+.asg>summary::before{content:"\25B8"; color:var(--faint); transition:transform .15s}
+.asg[open]>summary::before{transform:rotate(90deg)}
+.asg[open]>summary{border-bottom:1px solid var(--line); background:var(--surface-2); border-radius:12px 12px 0 0}
+.asg>summary:hover{background:var(--surface-2)}
+.asg-main{display:flex; align-items:baseline; gap:2px; flex:1; min-width:200px}
+.asg .breakdown{margin:0; padding:4px 16px 14px; width:calc(100% - 0px)}
+.asg .breakdown th:first-child, .asg .breakdown td:first-child{padding-left:2px}
+.asg .breakdown td:last-child, .asg .breakdown th:last-child{padding-right:2px}
+tr.nosub td{color:var(--muted)}
+.scorechips{display:flex; flex-wrap:wrap; gap:5px}
+.scorechip{font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; border:1px solid var(--line)}
+.scorechip.hi{color:var(--ok); background:color-mix(in srgb,var(--ok) 11%, var(--surface)); border-color:color-mix(in srgb,var(--ok) 32%, var(--line))}
+.scorechip.mid{color:var(--brass); background:color-mix(in srgb,var(--brass) 11%, var(--surface)); border-color:color-mix(in srgb,var(--brass) 32%, var(--line))}
+.scorechip.lo{color:var(--err); background:color-mix(in srgb,var(--err) 11%, var(--surface)); border-color:color-mix(in srgb,var(--err) 32%, var(--line))}
 
 /* summary */
 .summary{text-align:center}
@@ -2671,15 +2691,19 @@ function renderTeacher(main){
     const cls = classes.find(c=>c.id===a.classId);
     const subs = attempts.filter(t=>t.assignmentId===a.id);
     const avg = subs.length? Math.round(subs.reduce((s,t)=>s+t.pct,0)/subs.length):null;
-    ca.appendChild(el("div",{class:"classrow"},
-      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q · ${cls?cls.name:"—"}`)),
-      el("span",{class:"muted small"}, subs.length? `${subs.length} submitted · avg ${avg}%` : "no submissions")));
+    const det = el("details",{class:"asg"});
+    det.appendChild(el("summary",{},
+      el("div",{class:"asg-main"}, el("b",{},a.title),
+        el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q · ${cls?cls.name:"—"}`)),
+      el("span",{class:"asg-meta muted small"}, subs.length? `${subs.length} submitted · avg ${avg}%` : "no submissions")));
+    det.appendChild(assignmentBreakdown(a, cls, attempts));
+    ca.appendChild(det);
   });
   main.appendChild(ca);
 
-  // roster accuracy
+  // roster accuracy (overall, across all assignments)
   const rc = el("section",{class:"card"});
-  rc.appendChild(el("h2",{class:"cardh"},"Roster — accuracy"));
+  rc.appendChild(el("h2",{class:"cardh"},"Roster — overall accuracy"));
   if(Cloud.active){
     rc.appendChild(el("button",{class:"ghost", style:"margin-bottom:12px", onclick:()=>{ state._teacherSynced=false; Cloud.refreshTeacher().then(()=>renderApp()); }}, "Refresh from cloud"));
   }
@@ -2694,6 +2718,37 @@ function renderTeacher(main){
   main.appendChild(rc);
 }
 function labeled(l,node){ return el("label",{class:"pcell"}, el("span",{class:"pl small muted"}, l), node); }
+function fmtWhen(ts){ if(!ts) return "—"; try{ return new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }catch(e){ return "—"; } }
+function assignmentBreakdown(a, cls, attempts){
+  const subs = attempts.filter(t=>t.assignmentId===a.id);
+  const byId = {};
+  ((cls && cls.enrolled) || []).forEach(s=>{ byId[s.uid] = { name:s.displayName||s.uid, list:[] }; });
+  subs.forEach(t=>{ const id=t.studentUid||t.studentName; (byId[id] = byId[id] || { name:t.studentName||id, list:[] }).list.push(t); });
+  const rows = Object.values(byId).map(s=>{
+    const list = s.list.slice().sort((x,y)=>(x.when||0)-(y.when||0));
+    return { name:s.name, n:list.length,
+      best: list.length? Math.max(...list.map(t=>t.pct)) : null,
+      last: list.length? list[list.length-1] : null,
+      scores: list.map(t=>t.pct) };
+  });
+  rows.sort((x,y)=>{ if(x.n && !y.n) return -1; if(!x.n && y.n) return 1; if(x.n&&y.n) return y.best-x.best; return x.name.localeCompare(y.name); });
+  if(!rows.length) return el("p",{class:"muted small", style:"padding:4px 16px 14px"},
+    Cloud.active? "No students enrolled yet." : "Per-student data appears once students submit. Connect accounts for a full class roster.");
+  const t = el("table",{class:"roster breakdown"});
+  t.appendChild(el("tr",{}, el("th",{},"Student"), el("th",{},"Attempts"), el("th",{},"Best"), el("th",{},"Latest"), el("th",{},"Each attempt")));
+  rows.forEach(r=>{
+    const chips = el("div",{class:"scorechips"});
+    if(r.scores.length) r.scores.forEach(p=> chips.appendChild(el("span",{class:"scorechip "+(p>=80?"hi":p>=50?"mid":"lo")}, p+"%")));
+    else chips.appendChild(el("span",{class:"muted small"},"not submitted"));
+    t.appendChild(el("tr",{class:r.n?"":"nosub"},
+      el("td",{}, r.name),
+      el("td",{}, r.n? String(r.n) : "—"),
+      el("td",{}, r.best==null? "—" : el("b",{}, r.best+"%")),
+      el("td",{}, r.last? `${r.last.pct}% · ${fmtWhen(r.last.when)}` : "—"),
+      el("td",{}, chips)));
+  });
+  return t;
+}
 function scopeSummary(module, scope){
   if(!scope) return "all";
   if(module==="translate") return "translation";
