@@ -248,6 +248,8 @@ table.roster tr:hover td{background:color-mix(in srgb,var(--surface-2) 50%, tran
 .rankbadge.r2{background:linear-gradient(160deg,#E3E6EA,var(--silver)); color:#3C4044; border-color:var(--silver)}
 .rankbadge.r3{background:linear-gradient(160deg,#E6BD93,var(--bronze)); color:#5A3818; border-color:var(--bronze)}
 
+.anon-toggle{display:flex; align-items:center; gap:9px; margin:12px 0 2px; cursor:pointer; color:var(--muted); font-size:13px}
+.anon-toggle input{width:16px; height:16px; accent-color:var(--accent); cursor:pointer}
 .asg-listhead{margin:26px 0 14px; padding-top:18px; border-top:1px solid var(--line); font-family:var(--display); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
 /* teacher: per-assignment drill-down */
 .asg{border:1px solid var(--line); border-radius:12px; margin-bottom:14px; background:var(--surface); box-shadow:var(--shadow-sm)}
@@ -261,9 +263,8 @@ table.roster tr:hover td{background:color-mix(in srgb,var(--surface-2) 50%, tran
 .asg-main b{font-size:15px; line-height:1.25}
 .asg-scope{line-height:1.5}
 .asg-meta{flex:0 0 auto; white-space:nowrap; align-self:center}
-.asg .breakdown{margin:0; padding:10px 18px 18px}
-.asg .breakdown th:first-child, .asg .breakdown td:first-child{padding-left:2px}
-.asg .breakdown td:last-child, .asg .breakdown th:last-child{padding-right:2px}
+.asg-body{padding:8px 18px 18px}
+.asg .breakdown{margin:0}
 tr.nosub td{color:var(--muted)}
 .scorechips{display:flex; flex-wrap:wrap; gap:5px}
 .scorechip{font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; border:1px solid var(--line)}
@@ -1505,11 +1506,11 @@ const Cloud = {
     let snap=null; try{ snap = await api.getDoc(ref); }catch(e){}
     if(snap && snap.exists && snap.exists()){
       const d = snap.data();
-      return { uid:user.uid, displayName:d.displayName||user.email, email:user.email, role:d.role||"student", classIds:d.classIds||[] };
+      return { uid:user.uid, displayName:d.displayName||user.email, email:user.email, role:d.role||"student", classIds:d.classIds||[], anon:!!d.anon };
     }
     const su = this.pendingSignup || {};
-    const profile = { uid:user.uid, displayName:su.displayName||user.email, email:user.email, role:su.role||"student", classIds:[] };
-    try{ await api.setDoc(ref, { displayName:profile.displayName, email:profile.email, role:profile.role, classIds:[] }); }catch(e){}
+    const profile = { uid:user.uid, displayName:su.displayName||user.email, email:user.email, role:su.role||"student", classIds:[], anon:false };
+    try{ await api.setDoc(ref, { displayName:profile.displayName, email:profile.email, role:profile.role, classIds:[], anon:false }); }catch(e){}
     this.pendingSignup = null;
     return profile;
   },
@@ -1552,11 +1553,17 @@ const Cloud = {
     try{ const qs=await api.getDocs(api.query(api.collection(db,"scores"), api.where("classIds","array-contains",classId))); const out=[]; qs.forEach(d=>out.push(d.data())); return out; }
     catch(e){ return []; }
   },
+  async fetchGlobalScores(){
+    if(!this.active || !this.fb) return [];
+    const { db, api } = this.fb;
+    try{ const qs=await api.getDocs(api.collection(db,"scores")); const out=[]; qs.forEach(d=>out.push(d.data())); return out; }
+    catch(e){ return []; }
+  },
   push(kind, payload){
     if(!this.active || !this.fb) return;
     const { db, api } = this.fb;
     try{
-      if(kind==="profile") api.setDoc(api.doc(db,"users",payload.uid), { displayName:payload.displayName, email:payload.email||null, role:payload.role, classIds:payload.classIds||[] });
+      if(kind==="profile") api.setDoc(api.doc(db,"users",payload.uid), { displayName:payload.displayName, email:payload.email||null, role:payload.role, classIds:payload.classIds||[], anon:!!payload.anon });
       else if(kind==="progress" && state.user) api.setDoc(api.doc(db,"progress",state.user.uid), payload);
       else if(kind==="classes") payload.forEach(c=> api.setDoc(api.doc(db,"classes",c.id), { id:c.id, name:c.name, teacherId:c.teacherId, joinCode:c.joinCode }));
       else if(kind==="assignments") payload.forEach(a=> api.setDoc(api.doc(db,"assignments",a.id), a));
@@ -1593,7 +1600,7 @@ const state = {
   view: "home",
   user: null,                 // {uid, displayName, role}
   settings: { theme:"light", quizCount:15 },
-  ui: { progPeriod:"all", lbPeriod:"week", lbClassId:null },
+  ui: { progPeriod:"all", lbPeriod:"week", lbClassId:null, lbScope:"class" },
   session: null               // active drill session
 };
 
@@ -1634,7 +1641,7 @@ function recordResult(itemKey, category, correct){
 function pushScores(prog){
   if(!FIREBASE_ENABLED || !state.user) return;
   const daily = {}; for(const k in (prog.history||{})) daily[k] = prog.history[k].correct||0;
-  Cloud.push("scores", { uid:state.user.uid, name:state.user.displayName||"Student", classIds:state.user.classIds||[], daily });
+  Cloud.push("scores", { uid:state.user.uid, name:state.user.displayName||"Student", classIds:state.user.classIds||[], daily, anon: !!(state.user && state.user.anon) });
 }
 
 /* ---- time-period analytics ---- */
@@ -2803,60 +2810,96 @@ function prettyCat(cat){
   return (map[a]||a)+(b?` · ${b}`:"");
 }
 
-/* ---------- leaderboard (class correct-answer count by period) ---------- */
+/* ---------- leaderboard (class + global, ranked by correct answers) ---------- */
+function setAnonymous(val){
+  state.user.anon = !!val;
+  DB.setProfile(state.user.uid, state.user);     // local + cloud profile
+  pushScores(DB.progress(state.user.uid));        // re-stamp scores doc with anon flag
+  state._lbGlobal = undefined;                     // force the global board to refetch
+  renderApp();
+}
+function rankTable(card, rows, masking){
+  rows.sort((a,b)=> b.pts-a.pts);
+  const t = el("table",{class:"roster"});
+  t.appendChild(el("tr",{}, el("th",{},"#"), el("th",{},"Student"), el("th",{},"Correct")));
+  rows.forEach((r,i)=>{
+    const badge = el("span",{class:"rankbadge"+(i<3?" r"+(i+1):"")}, String(i+1));
+    const label = r.me ? ((r.name||"You")+" (you)") : (masking && r.anon ? "Anonymous" : r.name);
+    const tr = el("tr",{}, el("td",{}, badge), el("td",{}, label), el("td",{}, String(r.pts)));
+    if(r.me) tr.style.fontWeight="600";
+    t.appendChild(tr);
+  });
+  card.appendChild(t);
+}
 function renderLeaderboard(main){
   const me = state.user;
   main.appendChild(el("section",{class:"hero compact"},
     el("p",{class:"eyebrow"},"Certāmen"),
     el("h1",{class:"display"},"Leaderboard")));
 
-  const classes = DB.classes().filter(c => me.role==="teacher" ? c.teacherId===me.uid : (me.classIds||[]).includes(c.id));
   const card = el("section",{class:"card"});
   card.appendChild(el("h2",{class:"cardh"},"Correct answers"));
-  if(!classes.length){ card.appendChild(el("p",{class:"muted"}, me.role==="teacher"?"Create a class to see its leaderboard.":"Join a class to see its leaderboard.")); main.appendChild(card); return; }
-  if(!state.ui.lbClassId || !classes.find(c=>c.id===state.ui.lbClassId)) state.ui.lbClassId = classes[0].id;
 
-  if(classes.length>1){
-    const sel = el("select",{class:"parse-select", onchange:(e)=>{ state.ui.lbClassId=e.target.value; renderApp(); }});
-    classes.forEach(c=> sel.appendChild(el("option",{value:c.id}, c.name))); sel.value=state.ui.lbClassId;
-    card.appendChild(field("Class", sel));
-  }
-  card.appendChild(field("Period", periodSelector(state.ui.lbPeriod, (id)=>{ state.ui.lbPeriod=id; renderApp(); })));
+  const scopeRow = el("div",{class:"chooser"});
+  [["class","My class"],["global","Global"]].forEach(([id,label])=>
+    scopeRow.appendChild(el("button",{class:"choice small"+(((state.ui.lbScope||"class")===id)?" sel":""), onclick:()=>{ state.ui.lbScope=id; renderApp(); }}, label)));
+  card.appendChild(field("Board", scopeRow));
+
+  const anonLab = el("label",{class:"anon-toggle"});
+  const acb = el("input",{type:"checkbox"}); acb.checked=!!me.anon;
+  acb.addEventListener("change", ()=> setAnonymous(acb.checked));
+  anonLab.appendChild(acb);
+  anonLab.appendChild(el("span",{}, "Appear anonymously on the global board"));
+  card.appendChild(anonLab);
+
+  const scope = state.ui.lbScope || "class";
   const days = periodDays(state.ui.lbPeriod);
-
   const rows = [];
   const myProg = DB.progress(me.uid);
   const myDaily = {}; for(const k in (myProg.history||{})) myDaily[k]=myProg.history[k].correct||0;
-  rows.push({ uid:me.uid, name:(me.displayName||"You"), pts:correctInPeriod(myDaily, days), me:true });
+  rows.push({ uid:me.uid, name:(me.displayName||"You"), pts:correctInPeriod(myDaily, days), me:true, anon:!!me.anon });
 
-  if(FIREBASE_ENABLED){
-    state._lbScores = state._lbScores || {}; state._lbLoading = state._lbLoading || {};
-    const cid = state.ui.lbClassId;
-    const cached = state._lbScores[cid];
-    if(cached === undefined){
-      if(!state._lbLoading[cid]){
-        state._lbLoading[cid]=true;
-        Cloud.fetchClassScores(cid).then(list=>{ state._lbScores[cid]=list; state._lbLoading[cid]=false; renderApp(); });
-      }
-      card.appendChild(el("p",{class:"muted small"}, "Loading class scores…"));
-    } else {
-      cached.forEach(s=>{ if(s.uid===me.uid) return; rows.push({ uid:s.uid, name:s.name||"Student", pts:correctInPeriod(s.daily, days) }); });
-      card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ delete state._lbScores[cid]; renderApp(); }}, "Refresh"));
+  if(scope==="class"){
+    const classes = DB.classes().filter(c => me.role==="teacher" ? c.teacherId===me.uid : (me.classIds||[]).includes(c.id));
+    if(!classes.length){
+      card.appendChild(el("p",{class:"muted", style:"margin-top:4px"}, me.role==="teacher"
+        ? "Create a class to see its leaderboard, or switch to the global board above."
+        : "Join a class to see its leaderboard, or switch to the global board above."));
+      main.appendChild(card); return;
     }
+    if(!state.ui.lbClassId || !classes.find(c=>c.id===state.ui.lbClassId)) state.ui.lbClassId = classes[0].id;
+    if(classes.length>1){
+      const sel = el("select",{class:"parse-select", onchange:(e)=>{ state.ui.lbClassId=e.target.value; renderApp(); }});
+      classes.forEach(c=> sel.appendChild(el("option",{value:c.id}, c.name))); sel.value=state.ui.lbClassId;
+      card.appendChild(field("Class", sel));
+    }
+    card.appendChild(field("Period", periodSelector(state.ui.lbPeriod, (id)=>{ state.ui.lbPeriod=id; renderApp(); })));
+    if(FIREBASE_ENABLED){
+      state._lbScores = state._lbScores || {}; state._lbLoading = state._lbLoading || {};
+      const cid = state.ui.lbClassId; const cached = state._lbScores[cid];
+      if(cached === undefined){
+        if(!state._lbLoading[cid]){ state._lbLoading[cid]=true; Cloud.fetchClassScores(cid).then(list=>{ state._lbScores[cid]=list; state._lbLoading[cid]=false; renderApp(); }); }
+        card.appendChild(el("p",{class:"muted small"}, "Loading class scores…"));
+      } else {
+        cached.forEach(s=>{ if(s.uid===me.uid) return; rows.push({ uid:s.uid, name:s.name||"Student", pts:correctInPeriod(s.daily, days) }); });
+        card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ delete state._lbScores[cid]; renderApp(); }}, "Refresh"));
+      }
+    } else card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts for class comparison."));
+    rankTable(card, rows, false);
   } else {
-    card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts for class comparison."));
+    card.appendChild(field("Period", periodSelector(state.ui.lbPeriod, (id)=>{ state.ui.lbPeriod=id; renderApp(); })));
+    if(FIREBASE_ENABLED){
+      if(state._lbGlobal === undefined){
+        if(!state._lbGlobalLoading){ state._lbGlobalLoading=true; Cloud.fetchGlobalScores().then(list=>{ state._lbGlobal=list; state._lbGlobalLoading=false; renderApp(); }); }
+        card.appendChild(el("p",{class:"muted small"}, "Loading global scores…"));
+      } else {
+        state._lbGlobal.forEach(s=>{ if(s.uid===me.uid) return; rows.push({ uid:s.uid, name:s.name||"Student", pts:correctInPeriod(s.daily, days), anon:!!s.anon }); });
+        card.appendChild(el("p",{class:"muted small", style:"margin:2px 0 8px"}, "Everyone using Latin Trainer, ranked by correct answers. Names you've chosen to hide show as “Anonymous.”"));
+        card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ state._lbGlobal=undefined; renderApp(); }}, "Refresh"));
+      }
+    } else card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts to compete globally."));
+    rankTable(card, rows, true);
   }
-
-  rows.sort((a,b)=> b.pts-a.pts);
-  const t = el("table",{class:"roster"});
-  t.appendChild(el("tr",{}, el("th",{},"#"), el("th",{},"Student"), el("th",{},"Correct")));
-  rows.forEach((r,i)=>{
-    const badge = el("span",{class:"rankbadge"+(i<3?" r"+(i+1):"")}, String(i+1));
-    const tr = el("tr",{}, el("td",{}, badge), el("td",{}, r.name + (r.me?" (you)":"")), el("td",{}, String(r.pts)));
-    if(r.me) tr.style.fontWeight="600";
-    t.appendChild(tr);
-  });
-  card.appendChild(t);
   main.appendChild(card);
 }
 
@@ -2965,8 +3008,8 @@ function assignmentBreakdown(a, cls, attempts){
       scores: list.map(t=>t.pct) };
   });
   rows.sort((x,y)=>{ if(x.n && !y.n) return -1; if(!x.n && y.n) return 1; if(x.n&&y.n) return y.best-x.best; return x.name.localeCompare(y.name); });
-  if(!rows.length) return el("p",{class:"muted small", style:"padding:4px 16px 14px"},
-    Cloud.active? "No students enrolled yet." : "Per-student data appears once students submit. Connect accounts for a full class roster.");
+  if(!rows.length) return el("div",{class:"asg-body"}, el("p",{class:"muted small"},
+    Cloud.active? "No students enrolled yet." : "Per-student data appears once students submit. Connect accounts for a full class roster."));
   const t = el("table",{class:"roster breakdown"});
   t.appendChild(el("tr",{}, el("th",{},"Student"), el("th",{},"Attempts"), el("th",{},"Best"), el("th",{},"Latest"), el("th",{},"Each attempt")));
   rows.forEach(r=>{
@@ -2980,7 +3023,7 @@ function assignmentBreakdown(a, cls, attempts){
       el("td",{}, r.last? `${r.last.pct}% · ${fmtWhen(r.last.when)}` : "—"),
       el("td",{}, chips)));
   });
-  return t;
+  return el("div",{class:"asg-body"}, t);
 }
 function scopeSummary(module, scope){
   if(!scope) return "all";
