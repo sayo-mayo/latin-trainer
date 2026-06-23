@@ -2660,7 +2660,7 @@ function submitTable(q, feedback, submitBtn){
     if(!ok) td.appendChild(el("div",{class:"cellans lat"}, cell.answer));
     recordResult(cell.itemKey, cell.category||q.category, ok);
   });
-  s.n++; if(total && correct===total) s.correct++;
+  s.n += total; s.correct += correct;
   submitBtn.textContent="Next"; submitBtn.onclick=advance;
   feedback.innerHTML="";
   const cls = correct===total ? "ok" : (correct>=Math.ceil(total*0.6) ? "warn" : "err");
