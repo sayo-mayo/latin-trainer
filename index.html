@@ -1455,7 +1455,7 @@ const kv = localStorageWorks() ? LocalStore() : MemoryStore();
 const DB = {
   profile(uid){ return kv.getJSON("lvdvs:profile:"+uid, null); },
   setProfile(uid,p){ kv.setJSON("lvdvs:profile:"+uid, p); Cloud.push("profile", p); },
-  progress(uid){ return kv.getJSON("lvdvs:progress:"+uid, { items:{}, stats:{}, streak:0, lastDay:null, totalSeen:0, totalCorrect:0, points:0, history:{} }); },
+  progress(uid){ return kv.getJSON("lvdvs:progress:"+uid, { items:{}, stats:{}, streak:0, lastDay:null, totalSeen:0, totalCorrect:0, history:{} }); },
   setProgress(uid,p){ kv.setJSON("lvdvs:progress:"+uid, p); Cloud.push("progress", p); },
   classes(){ return kv.getJSON("lvdvs:classes", []); },
   setClasses(c){ kv.setJSON("lvdvs:classes", c); Cloud.push("classes", c); },
@@ -1605,7 +1605,6 @@ function ensureLocalUser(){
    3. spaced repetition (Leitner)
 --------------------------------------------------------------------------- */
 const BOX_INTERVAL = [0, 1, 3, 7, 16, 35]; // days by box level
-const POINTS_PER_CORRECT = 10;
 function dayKey(d){ return (d||new Date()).toISOString().slice(0,10); } // YYYY-MM-DD
 function recordResult(itemKey, category, correct){
   const prog = DB.progress(state.user.uid);
@@ -1617,22 +1616,20 @@ function recordResult(itemKey, category, correct){
   const c = prog.stats[category] || { seen:0, correct:0 };
   c.seen++; if(correct) c.correct++; prog.stats[category] = c;
   prog.totalSeen++; if(correct) prog.totalCorrect++;
-  const earned = correct ? POINTS_PER_CORRECT : 0;
-  prog.points = (prog.points||0) + earned;
   if(!prog.history) prog.history = {};
   const dk = dayKey();
-  const h = prog.history[dk] || { seen:0, correct:0, points:0 };
-  h.seen++; if(correct) h.correct++; h.points += earned;
+  const h = prog.history[dk] || { seen:0, correct:0 };
+  h.seen++; if(correct) h.correct++;
   prog.history[dk] = h;
   const today = new Date().toDateString();
   if(prog.lastDay !== today){ prog.streak = (prog.lastDay && (Date.parse(today)-Date.parse(prog.lastDay))<=DAY*1.5)? prog.streak+1 : 1; prog.lastDay = today; }
   DB.setProgress(state.user.uid, prog);
   pushScores(prog);
 }
-/* denormalised, peer-readable points doc for the class leaderboard */
+/* denormalised, peer-readable doc for the class leaderboard (daily correct counts) */
 function pushScores(prog){
   if(!FIREBASE_ENABLED || !state.user) return;
-  const daily = {}; for(const k in (prog.history||{})) daily[k] = prog.history[k].points||0;
+  const daily = {}; for(const k in (prog.history||{})) daily[k] = prog.history[k].correct||0;
   Cloud.push("scores", { uid:state.user.uid, name:state.user.displayName||"Student", classIds:state.user.classIds||[], daily });
 }
 
@@ -1641,11 +1638,11 @@ const PERIODS = [["day","1 day",1],["week","1 week",7],["month","1 month",30],["
 function periodDays(id){ const p=PERIODS.find(x=>x[0]===id); return p?p[2]:Infinity; }
 function cutoffKey(days){ return days===Infinity ? null : dayKey(new Date(Date.now()-(days-1)*DAY)); }
 function historyAggregate(history, days){
-  const cut = cutoffKey(days); let seen=0, correct=0, points=0;
-  for(const k in (history||{})){ if(cut && k<cut) continue; const h=history[k]; seen+=h.seen||0; correct+=h.correct||0; points+=h.points||0; }
-  return { seen, correct, points };
+  const cut = cutoffKey(days); let seen=0, correct=0;
+  for(const k in (history||{})){ if(cut && k<cut) continue; const h=history[k]; seen+=h.seen||0; correct+=h.correct||0; }
+  return { seen, correct };
 }
-function pointsInPeriod(daily, days){
+function correctInPeriod(daily, days){
   const cut = cutoffKey(days); let p=0;
   for(const k in (daily||{})){ if(cut && k<cut) continue; p += daily[k]||0; }
   return p;
@@ -1667,14 +1664,10 @@ function dailyChart(history, days){
   const wrap = el("div",{class:"daychart"});
   keys.forEach(k=>{
     const h = history[k]; const acc = h.seen? Math.round(100*h.correct/h.seen):0;
-    wrap.appendChild(el("div",{class:"daybar", title:`${k}: ${acc}% · ${h.seen} answered · ${h.points} pts`,
+    wrap.appendChild(el("div",{class:"daybar", title:`${k}: ${acc}% · ${h.correct||0}/${h.seen} correct`,
       style:`height:${Math.max(4,acc)}%; background:var(--accent)`}));
   });
   return wrap;
-}
-function dueCount(){
-  const prog = DB.progress(state.user.uid); const t = now();
-  return Object.values(prog.items).filter(i=> i.due && i.due <= t && i.box>0).length;
 }
 function categoryWeight(category){
   const prog = DB.progress(state.user.uid);
@@ -2405,10 +2398,9 @@ function renderHome(main){
   main.innerHTML = "";
   const prog = DB.progress(state.user.uid);
   main.appendChild(el("div",{class:"herostats", style:"border-top:none; padding-top:0; margin-top:0; margin-bottom:28px"},
-    stat(dueCount(), "due for review"),
     stat(prog.streak||0, "day streak"),
     stat(dailyAccuracy()+"%", "today's accuracy"),
-    stat(prog.points||0, "points")));
+    stat(prog.totalCorrect||0, "correct")));
   const card = el("section",{class:"card setup"});
   card.appendChild(el("h2",{class:"cardh"},"New drill"));
   // module picker
@@ -2773,7 +2765,7 @@ function renderProgress(main){
   pc.appendChild(field("Period", periodSelector(state.ui.progPeriod, (id)=>{ state.ui.progPeriod=id; renderApp(); })));
   pc.appendChild(el("div",{class:"herostats"},
     stat(acc+"%", "accuracy this period"),
-    stat(agg.points, "points this period"),
+    stat(agg.correct, "correct this period"),
     stat(agg.seen, "answered this period"),
     stat(prog.streak||0, "day streak")));
   pc.appendChild(dailyChart(prog.history, days));
@@ -2807,7 +2799,7 @@ function prettyCat(cat){
   return (map[a]||a)+(b?` · ${b}`:"");
 }
 
-/* ---------- leaderboard (class points by period) ---------- */
+/* ---------- leaderboard (class correct-answer count by period) ---------- */
 function renderLeaderboard(main){
   const me = state.user;
   main.appendChild(el("section",{class:"hero compact"},
@@ -2816,7 +2808,7 @@ function renderLeaderboard(main){
 
   const classes = DB.classes().filter(c => me.role==="teacher" ? c.teacherId===me.uid : (me.classIds||[]).includes(c.id));
   const card = el("section",{class:"card"});
-  card.appendChild(el("h2",{class:"cardh"},"Class points"));
+  card.appendChild(el("h2",{class:"cardh"},"Correct answers"));
   if(!classes.length){ card.appendChild(el("p",{class:"muted"}, me.role==="teacher"?"Create a class to see its leaderboard.":"Join a class to see its leaderboard.")); main.appendChild(card); return; }
   if(!state.ui.lbClassId || !classes.find(c=>c.id===state.ui.lbClassId)) state.ui.lbClassId = classes[0].id;
 
@@ -2829,10 +2821,9 @@ function renderLeaderboard(main){
   const days = periodDays(state.ui.lbPeriod);
 
   const rows = [];
-  // always include the current user from local progress
   const myProg = DB.progress(me.uid);
-  const myDaily = {}; for(const k in (myProg.history||{})) myDaily[k]=myProg.history[k].points||0;
-  rows.push({ uid:me.uid, name:(me.displayName||"You"), pts:pointsInPeriod(myDaily, days), me:true });
+  const myDaily = {}; for(const k in (myProg.history||{})) myDaily[k]=myProg.history[k].correct||0;
+  rows.push({ uid:me.uid, name:(me.displayName||"You"), pts:correctInPeriod(myDaily, days), me:true });
 
   if(FIREBASE_ENABLED){
     state._lbScores = state._lbScores || {}; state._lbLoading = state._lbLoading || {};
@@ -2845,7 +2836,7 @@ function renderLeaderboard(main){
       }
       card.appendChild(el("p",{class:"muted small"}, "Loading class scores…"));
     } else {
-      cached.forEach(s=>{ if(s.uid===me.uid) return; rows.push({ uid:s.uid, name:s.name||"Student", pts:pointsInPeriod(s.daily, days) }); });
+      cached.forEach(s=>{ if(s.uid===me.uid) return; rows.push({ uid:s.uid, name:s.name||"Student", pts:correctInPeriod(s.daily, days) }); });
       card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ delete state._lbScores[cid]; renderApp(); }}, "Refresh"));
     }
   } else {
@@ -2854,7 +2845,7 @@ function renderLeaderboard(main){
 
   rows.sort((a,b)=> b.pts-a.pts);
   const t = el("table",{class:"roster"});
-  t.appendChild(el("tr",{}, el("th",{},"#"), el("th",{},"Student"), el("th",{},"Points")));
+  t.appendChild(el("tr",{}, el("th",{},"#"), el("th",{},"Student"), el("th",{},"Correct")));
   rows.forEach((r,i)=>{
     const badge = el("span",{class:"rankbadge"+(i<3?" r"+(i+1):"")}, String(i+1));
     const tr = el("tr",{}, el("td",{}, badge), el("td",{}, r.name + (r.me?" (you)":"")), el("td",{}, String(r.pts)));
