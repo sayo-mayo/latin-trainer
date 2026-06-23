@@ -501,7 +501,11 @@ const PRONOUNS = {
   quis: { gloss:"who? what? (interrogative)", g:true, forms:{
     m:{ sg:{nom:"quis",gen:"cuius",dat:"cui",acc:"quem",abl:"quō"}, pl:{nom:"quī",gen:"quōrum",dat:"quibus",acc:"quōs",abl:"quibus"} },
     f:{ sg:{nom:"quis",gen:"cuius",dat:"cui",acc:"quem",abl:"quō"}, pl:{nom:"quae",gen:"quārum",dat:"quibus",acc:"quās",abl:"quibus"} },
-    n:{ sg:{nom:"quid",gen:"cuius",dat:"cui",acc:"quid",abl:"quō"}, pl:{nom:"quae",gen:"quōrum",dat:"quibus",acc:"quae",abl:"quibus"} } } }
+    n:{ sg:{nom:"quid",gen:"cuius",dat:"cui",acc:"quid",abl:"quō"}, pl:{nom:"quae",gen:"quōrum",dat:"quibus",acc:"quae",abl:"quibus"} } } },
+  nos: { gloss:"we (pl.)", forms:{
+    pl:{ nom:"nōs", gen:"nostrī/nostrum", dat:"nōbīs", acc:"nōs", abl:"nōbīs" } } },
+  vos: { gloss:"you (pl.)", forms:{
+    pl:{ nom:"vōs", gen:"vestrī/vestrum", dat:"vōbīs", acc:"vōs", abl:"vōbīs" } } }
 };
 function declinePronoun(key){ return PRONOUNS[key]; }
 
@@ -1351,7 +1355,7 @@ const kv = localStorageWorks() ? LocalStore() : MemoryStore();
 const DB = {
   profile(uid){ return kv.getJSON("lvdvs:profile:"+uid, null); },
   setProfile(uid,p){ kv.setJSON("lvdvs:profile:"+uid, p); Cloud.push("profile", p); },
-  progress(uid){ return kv.getJSON("lvdvs:progress:"+uid, { items:{}, stats:{}, streak:0, lastDay:null, totalSeen:0, totalCorrect:0 }); },
+  progress(uid){ return kv.getJSON("lvdvs:progress:"+uid, { items:{}, stats:{}, streak:0, lastDay:null, totalSeen:0, totalCorrect:0, points:0, history:{} }); },
   setProgress(uid,p){ kv.setJSON("lvdvs:progress:"+uid, p); Cloud.push("progress", p); },
   classes(){ return kv.getJSON("lvdvs:classes", []); },
   setClasses(c){ kv.setJSON("lvdvs:classes", c); Cloud.push("classes", c); },
@@ -1438,6 +1442,12 @@ const Cloud = {
     try{ const qs=await api.getDocs(api.query(api.collection(db,"classes"), api.where("joinCode","==",code))); let found=null; qs.forEach(d=>{ if(!found) found=d.data(); }); return found; }
     catch(e){ return null; }
   },
+  async fetchClassScores(classId){
+    if(!this.active || !this.fb) return [];
+    const { db, api } = this.fb;
+    try{ const qs=await api.getDocs(api.query(api.collection(db,"scores"), api.where("classIds","array-contains",classId))); const out=[]; qs.forEach(d=>out.push(d.data())); return out; }
+    catch(e){ return []; }
+  },
   push(kind, payload){
     if(!this.active || !this.fb) return;
     const { db, api } = this.fb;
@@ -1447,6 +1457,7 @@ const Cloud = {
       else if(kind==="classes") payload.forEach(c=> api.setDoc(api.doc(db,"classes",c.id), { id:c.id, name:c.name, teacherId:c.teacherId, joinCode:c.joinCode }));
       else if(kind==="assignments") payload.forEach(a=> api.setDoc(api.doc(db,"assignments",a.id), a));
       else if(kind==="attempts") payload.forEach(t=> api.setDoc(api.doc(db,"attempts",t.id), t));
+      else if(kind==="scores" && state.user) api.setDoc(api.doc(db,"scores",state.user.uid), payload);
     }catch(e){}
   },
   signIn(email,pw){ const {auth,api}=this.fb; return api.signInWithEmailAndPassword(auth,email,pw); },
@@ -1477,6 +1488,7 @@ const state = {
   view: "home",
   user: null,                 // {uid, displayName, role}
   settings: { theme:"light", quizCount:15 },
+  ui: { progPeriod:"all", lbPeriod:"week", lbClassId:null },
   session: null               // active drill session
 };
 
@@ -1492,6 +1504,8 @@ function ensureLocalUser(){
    3. spaced repetition (Leitner)
 --------------------------------------------------------------------------- */
 const BOX_INTERVAL = [0, 1, 3, 7, 16, 35]; // days by box level
+const POINTS_PER_CORRECT = 10;
+function dayKey(d){ return (d||new Date()).toISOString().slice(0,10); } // YYYY-MM-DD
 function recordResult(itemKey, category, correct){
   const prog = DB.progress(state.user.uid);
   const it = prog.items[itemKey] || { box:0, due:0, seen:0, correct:0 };
@@ -1502,9 +1516,62 @@ function recordResult(itemKey, category, correct){
   const c = prog.stats[category] || { seen:0, correct:0 };
   c.seen++; if(correct) c.correct++; prog.stats[category] = c;
   prog.totalSeen++; if(correct) prog.totalCorrect++;
+  const earned = correct ? POINTS_PER_CORRECT : 0;
+  prog.points = (prog.points||0) + earned;
+  if(!prog.history) prog.history = {};
+  const dk = dayKey();
+  const h = prog.history[dk] || { seen:0, correct:0, points:0 };
+  h.seen++; if(correct) h.correct++; h.points += earned;
+  prog.history[dk] = h;
   const today = new Date().toDateString();
   if(prog.lastDay !== today){ prog.streak = (prog.lastDay && (Date.parse(today)-Date.parse(prog.lastDay))<=DAY*1.5)? prog.streak+1 : 1; prog.lastDay = today; }
   DB.setProgress(state.user.uid, prog);
+  pushScores(prog);
+}
+/* denormalised, peer-readable points doc for the class leaderboard */
+function pushScores(prog){
+  if(!FIREBASE_ENABLED || !state.user) return;
+  const daily = {}; for(const k in (prog.history||{})) daily[k] = prog.history[k].points||0;
+  Cloud.push("scores", { uid:state.user.uid, name:state.user.displayName||"Student", classIds:state.user.classIds||[], daily });
+}
+
+/* ---- time-period analytics ---- */
+const PERIODS = [["week","1 week",7],["month","1 month",30],["year","1 year",365],["all","All time",Infinity]];
+function periodDays(id){ const p=PERIODS.find(x=>x[0]===id); return p?p[2]:Infinity; }
+function cutoffKey(days){ return days===Infinity ? null : dayKey(new Date(Date.now()-(days-1)*DAY)); }
+function historyAggregate(history, days){
+  const cut = cutoffKey(days); let seen=0, correct=0, points=0;
+  for(const k in (history||{})){ if(cut && k<cut) continue; const h=history[k]; seen+=h.seen||0; correct+=h.correct||0; points+=h.points||0; }
+  return { seen, correct, points };
+}
+function pointsInPeriod(daily, days){
+  const cut = cutoffKey(days); let p=0;
+  for(const k in (daily||{})){ if(cut && k<cut) continue; p += daily[k]||0; }
+  return p;
+}
+function dailyAccuracy(){
+  const prog = DB.progress(state.user.uid); const h=(prog.history||{})[dayKey()];
+  return h && h.seen ? Math.round(100*h.correct/h.seen) : 0;
+}
+function periodSelector(current, onPick){
+  const row = el("div",{class:"chooser"});
+  PERIODS.forEach(([id,label])=> row.appendChild(el("button",{class:"choice small"+(current===id?" sel":""), onclick:()=>onPick(id)}, label)));
+  return row;
+}
+function dailyChart(history, days){
+  const cut = cutoffKey(days);
+  let keys = Object.keys(history||{}).filter(k=>!cut || k>=cut).sort();
+  if(keys.length>60) keys = keys.slice(keys.length-60); // cap bars
+  const wrap = el("div",{style:"display:flex; align-items:flex-end; gap:3px; height:120px; padding:8px 0; overflow-x:auto"});
+  if(!keys.length){ return el("p",{class:"muted small"}, "No activity in this period yet."); }
+  keys.forEach(k=>{
+    const h = history[k]; const acc = h.seen? Math.round(100*h.correct/h.seen):0;
+    const col = acc>=80?"var(--ok,#15725B)":acc>=50?"#caa63a":"var(--err,#b4452f)";
+    const bar = el("div",{title:`${k}: ${acc}% · ${h.seen} answered · ${h.points} pts`,
+      style:`width:10px; min-width:10px; height:${Math.max(4,acc)}%; background:${col}; border-radius:2px 2px 0 0`});
+    wrap.appendChild(bar);
+  });
+  return wrap;
 }
 function dueCount(){
   const prog = DB.progress(state.user.uid); const t = now();
@@ -1526,6 +1593,16 @@ const lexVerbDep  = () => LEX.verbs.filter(v=>v.deponent).map(v=>v.key);
 const lexVerbIrr  = () => LEX.verbs.filter(v=>v.irregular).map(v=>v.key);
 const lexAdj      = t => LEX.adjectives.filter(a=>a.type===t).map(a=>a.key);
 
+const VERB_GROUPS = [
+  { id:"c1", label:"1st conjugation", keys:lexVerbConj(1) },
+  { id:"c2", label:"2nd conjugation", keys:lexVerbConj(2) },
+  { id:"c3", label:"3rd conjugation", keys:lexVerbConj(3) },
+  { id:"cio", label:"Mixed conjugation", keys:lexVerbConj("3io") },
+  { id:"c4", label:"4th conjugation", keys:lexVerbConj(4) },
+  { id:"cdep", label:"Deponents", keys:lexVerbDep() },
+  { id:"cirr", label:"Irregular verbs", keys:lexVerbIrr() }
+];
+
 const SCOPE = {
   decline: {
     label:"Noun declension",
@@ -1539,21 +1616,34 @@ const SCOPE = {
   },
   conjugate: {
     label:"Verb conjugation",
-    groups:[
-      { id:"c1", label:"1st conjugation", keys:lexVerbConj(1) },
-      { id:"c2", label:"2nd conjugation", keys:lexVerbConj(2) },
-      { id:"c3", label:"3rd conjugation", keys:lexVerbConj(3) },
-      { id:"cio", label:"Mixed conjugation", keys:lexVerbConj("3io") },
-      { id:"c4", label:"4th conjugation", keys:lexVerbConj(4) },
-      { id:"cdep", label:"Deponents", keys:lexVerbDep() },
-      { id:"cirr", label:"Irregular verbs", keys:lexVerbIrr() }
-    ],
+    groups:VERB_GROUPS,
     tenseGroups:[
       { id:"tpres", label:"Present system (pres/impf/fut)", tenses:["present","imperfect","future"] },
       { id:"tperf", label:"Perfect system (perf/plup/fut.perf)", tenses:["perfect","pluperfect","futurePerfect"] }
     ],
     moods:[ {id:"mind",label:"Indicative",mood:"indicative"}, {id:"msub",label:"Subjunctive",mood:"subjunctive"} ],
     voices:[ {id:"vact",label:"Active",voice:"active"}, {id:"vpas",label:"Passive",voice:"passive"} ]
+  },
+  participles: {
+    label:"Participles",
+    groups:VERB_GROUPS,
+    typeGroups:[
+      { id:"ppres", label:"Present", type:"present" },
+      { id:"pperf", label:"Perfect", type:"perfect" },
+      { id:"pfut", label:"Future", type:"future" }
+    ]
+  },
+  infinitives: {
+    label:"Infinitives",
+    groups:VERB_GROUPS,
+    formGroups:[
+      { id:"ipresact", label:"Present active", tense:"present", voice:"active" },
+      { id:"iprespass", label:"Present passive", tense:"present", voice:"passive" },
+      { id:"iperfact", label:"Perfect active", tense:"perfect", voice:"active" },
+      { id:"iperfpass", label:"Perfect passive", tense:"perfect", voice:"passive" },
+      { id:"ifutact", label:"Future active", tense:"future", voice:"active" },
+      { id:"ifutpass", label:"Future passive", tense:"future", voice:"passive" }
+    ]
   },
   adjadv: {
     label:"Adjectives & adverbs",
@@ -1572,6 +1662,8 @@ const SCOPE = {
     groups:[
       { id:"ego", label:"ego", keys:["ego"] },
       { id:"tu", label:"tu", keys:["tu"] },
+      { id:"nos", label:"nos", keys:["nos"] },
+      { id:"vos", label:"vos", keys:["vos"] },
       { id:"se", label:"se", keys:["se"] },
       { id:"is", label:"is, ea, id", keys:["is"] },
       { id:"hic", label:"hic, haec, hoc", keys:["hic"] },
@@ -1702,12 +1794,94 @@ function genAdjAdv(sel){
     prompt:`Give the <b>${degLabel} adverb</b> from <span class="lat">${adjCitation(e)}</span> <span class="muted">(${e.gloss})</span>`,
     answer:a[deg], lemma:e, paradigm:()=>paradigmAdverb(e) };
 }
+/* ---- participles & infinitives (verb-based) ---- */
+function participleForms(v, type){
+  const pa = v.participle || {};
+  if(type==="present"){
+    if(!pa.presentActive) return null;
+    const nom = pa.presentActive.nom; const stem = (pa.presentActive.gen||"").replace(/is$/,"");
+    const d = N.declineAdj3({m:nom,f:nom,n:nom}, stem);
+    ["m","f","n"].forEach(g=>{ if(d[g]&&d[g].sg) d[g].sg.abl = stem+"e"; }); // participial ablative -e
+    return { decl:d, citation:`${nom}, ${pa.presentActive.gen}` };
+  }
+  const nom = type==="perfect" ? pa.perfectPassive : pa.futureActive;
+  if(!nom) return null;
+  const f = nom.replace(/us$/,"a"), n = nom.replace(/us$/,"um");
+  return { decl:N.declineAdj1(nom,f,n), citation:`${nom}, ${f}, ${n}` };
+}
+function genParticiple(sel){
+  const keys = pickScopeKeys("participles", sel);
+  const wantTypes = (sel.types&&sel.types.length ? SCOPE.participles.typeGroups.filter(t=>sel.types.includes(t.id)) : SCOPE.participles.typeGroups).map(t=>t.type);
+  let e, v, type=null, pf=null, guard=0;
+  do{
+    e = verbEntry(rand(keys)); v = N.conjugateVerb(e);
+    const avail = wantTypes.filter(t=> participleForms(v,t));
+    type = avail.length ? rand(avail) : null;
+    pf = type ? participleForms(v,type) : null;
+    guard++;
+  } while(!pf && guard<40);
+  if(!pf){ e = LEX.verbs.find(x=>!x.irregular) || LEX.verbs[0]; v=N.conjugateVerb(e); type="present"; pf=participleForms(v,"present"); }
+  const g = rand(["m","f","n"]); const num = rand(N.NUMS); const cas = rand(N.CASES);
+  const answer = pf.decl[g][num][cas];
+  return { kind:"produce", category:"participle:"+type, itemKey:`ppl:${e.key}:${type}:${g}:${cas}:${num}`,
+    eyebrow:`Participle · ${type}`,
+    prompt:`Give the <b>${type} participle</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span> — <b>${GEN_LABEL[g]} ${N.CASE_LABEL[cas]} ${NUM_LABEL[num]}</b>`,
+    answer, lemma:e, paradigm:()=>paradigmParticiple(pf, type, g, {cas,num}) };
+}
+function paradigmParticiple(pf, type, g, hi){
+  return wrapPara(`${type} participle: ${pf.citation} — ${GEN_LABEL[g]}`, caseTable(pf.decl[g], hi));
+}
+
+function infinitiveForms(v, e){
+  const inf = v.infinitive || {}; const out=[];
+  if(e.deponent){
+    if(inf.present) out.push({label:"Present", value:inf.present});
+    if(inf.perfect) out.push({label:"Perfect", value:inf.perfect});
+    if(inf.future)  out.push({label:"Future",  value:inf.future});
+  } else {
+    [["present","active","Present active", inf.present],
+     ["present","passive","Present passive", inf.presentPassive],
+     ["perfect","active","Perfect active", inf.perfect],
+     ["perfect","passive","Perfect passive", inf.perfectPassive],
+     ["future","active","Future active", inf.future],
+     ["future","passive","Future passive", inf.futurePassive]
+    ].forEach(([t,vc,label,val])=>{ if(val) out.push({tense:t,voice:vc,label,value:val}); });
+  }
+  return out;
+}
+function genInfinitive(sel){
+  const keys = pickScopeKeys("infinitives", sel);
+  const wantFG = (sel.forms&&sel.forms.length ? SCOPE.infinitives.formGroups.filter(f=>sel.forms.includes(f.id)) : SCOPE.infinitives.formGroups);
+  const wantPairs = wantFG.map(f=>f.tense+":"+f.voice);
+  const wantTenses = new Set(wantFG.map(f=>f.tense));
+  let e, v, all=[], choices=[], guard=0;
+  do{
+    e = verbEntry(rand(keys)); v = N.conjugateVerb(e); all = infinitiveForms(v, e);
+    choices = e.deponent ? all.filter(o=> wantTenses.has(o.label.toLowerCase()))
+                         : all.filter(o=> wantPairs.includes(o.tense+":"+o.voice));
+    guard++;
+  } while(!choices.length && guard<40);
+  if(!choices.length){ choices = all.length?all:[{label:"Present", value:(v.infinitive&&v.infinitive.present)}]; }
+  const pick = rand(choices);
+  return { kind:"produce", category:"infinitive:"+(e.deponent?"dep":(pick.tense+"-"+(pick.voice||"act"))), itemKey:`inf:${e.key}:${pick.label}`,
+    eyebrow:`Infinitive · ${pick.label.toLowerCase()}`,
+    prompt:`Give the <b>${pick.label.toLowerCase()} infinitive</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span>`,
+    answer: pick.value, lemma:e, paradigm:()=>paradigmInfinitives(all) };
+}
+function paradigmInfinitives(all){
+  const box = el("div",{class:"cmp", style:"flex-wrap:wrap"});
+  all.forEach(o=> box.appendChild(chip(o.label, o.value)));
+  return wrapPara("Infinitives", box);
+}
+
 function genPronoun(sel){
   const keys = pickScopeKeys("pronoun", sel);
   let p, key, g, num, cas, answer, guard=0;
   do {
     key = rand(keys); p = N.declinePronoun(key); guard++;
-    g = p.g ? rand(["m","f","n"]) : null; num = rand(N.NUMS);
+    g = p.g ? rand(["m","f","n"]) : null;
+    const nums = N.NUMS.filter(nm => p.g ? p.forms[g][nm] : p.forms[nm]);
+    num = rand(nums);
     const forms = p.g ? p.forms[g][num] : p.forms[num];
     const avail = N.CASES.filter(c=>forms[c]);
     cas = rand(avail); answer = forms[cas];
@@ -1752,7 +1926,7 @@ function genParse(sel){
   } else { // pronoun
     const keys = pickScopeKeys("pronoun", sel); const key=rand(keys); const p=N.declinePronoun(key); lemma={key, gloss:p.gloss}; hasGender=!!p.g;
     if(p.g){ for(const g of ["m","f","n"]) for(const num of N.NUMS) for(const cas of N.CASES){ const f=p.forms[g][num][cas]; if(f)(idx[f]=idx[f]||[]).push({g,cas,num}); } }
-    else { for(const num of N.NUMS) for(const cas of N.CASES){ const f=p.forms[num][cas]; if(f)(idx[f]=idx[f]||[]).push({cas,num}); } }
+    else { for(const num of N.NUMS){ if(!p.forms[num]) continue; for(const cas of N.CASES){ const f=p.forms[num][cas]; if(f)(idx[f]=idx[f]||[]).push({cas,num}); } } }
   }
   const forms = Object.keys(idx); const form = rand(forms);
   return { kind:"parseNominal", category:"parse:nominal", itemKey:`parsen:${lemma.key}:${form}`,
@@ -1787,6 +1961,8 @@ function generate(session){
     case "conjugate": return genConjugate(sel);
     case "adjadv": return genAdjAdv(sel);
     case "pronoun": return genPronoun(sel);
+    case "participles": return genParticiple(sel);
+    case "infinitives": return genInfinitive(sel);
     case "parse": return genParse(sel);
     case "translate": return genTranslate();
   }
@@ -1863,7 +2039,7 @@ function wrapPara(title, node){ const w=el("div",{}); w.appendChild(el("div",{cl
 function ordinalDecl(d){ return ["","1st","2nd","3rd","4th","5th"][d]; }
 function verbConjLabel(e){ if(e.irregular) return "irregular"; if(e.conj==="3io") return "mixed conj."+(e.deponent?" deponent":""); return e.conj+(e.conj===1?"st":e.conj===2?"nd":e.conj===3?"rd":"th")+" conj."+(e.deponent?" deponent":""); }
 function adjCitation(e){ return e.cite || (e.type==="adj1" ? `${e.m}, ${e.f}, ${e.n}` : `${e.nom.m}, ${e.nom.f}, ${e.nom.n}`); }
-function pronCitation(key){ const map={ego:"ego",tu:"tu",se:"se",is:"is, ea, id",hic:"hic, haec, hoc",ille:"ille, illa, illud",ipse:"ipse, ipsa, ipsum",qui:"qui, quae, quod",quis:"quis, quid"}; return map[key]||key; }
+function pronCitation(key){ const map={ego:"ego",tu:"tu",nos:"nos",vos:"vos",se:"se",is:"is, ea, id",hic:"hic, haec, hoc",ille:"ille, illa, illud",ipse:"ipse, ipsa, ipsum",qui:"qui, quae, quod",quis:"quis, quid"}; return map[key]||key; }
 
 /* ---------------------------------------------------------------------------
    8. rendering — shell + router
@@ -1873,7 +2049,7 @@ function setView(v){ state.view = v; renderApp(); }
 
 function topbar(){
   const nav = el("nav",{class:"nav"});
-  [["home","Drill"],["progress","Progress"],["class","Class"]].forEach(([v,label])=>{
+  [["home","Drill"],["progress","Progress"],["leaderboard","Leaderboard"],["class","Class"]].forEach(([v,label])=>{
     nav.appendChild(el("button",{class:"navbtn"+(state.view===v?" active":""), onclick:()=>setView(v)}, label));
   });
   const acct = el("div",{class:"acct"},
@@ -1900,6 +2076,7 @@ function renderApp(){
   if(state.view==="home") renderHome(main);
   else if(state.view==="drill") renderDrill(main);
   else if(state.view==="progress") renderProgress(main);
+  else if(state.view==="leaderboard") renderLeaderboard(main);
   else if(state.view==="class") renderClass(main);
 }
 
@@ -1945,8 +2122,10 @@ function renderAuth(r){
 const DEFAULT_SCOPE = {
   decline:{groups:["d1","d2","d3"]},
   conjugate:{groups:["c1","c2","c3"],tenses:["tpres"],moods:["mind"],voices:["vact"]},
+  participles:{groups:["c1","c2","c3"],types:["ppres","pperf","pfut"]},
+  infinitives:{groups:["c1","c2","c3"],forms:["ipresact","iprespass","iperfact","iperfpass","ifutact","ifutpass"]},
   adjadv:{groups:["a1","a3"],tasks:["tdec","tcomp","tadv"]},
-  pronoun:{groups:["ego","tu","se","is","hic","ille","ipse","qui","quis"]},
+  pronoun:{groups:["ego","tu","nos","vos","se","is","hic","ille","ipse","qui","quis"]},
   parse:{parseModule:"decline",groups:["d1","d2","d3"]},
   translate:{}
 };
@@ -1956,13 +2135,11 @@ const asgChoice = { title:"", classId:"", module:"decline", count:15, scope:JSON
 function renderHome(main){
   main.innerHTML = "";
   const prog = DB.progress(state.user.uid);
-  const acc = prog.totalSeen ? Math.round(100*prog.totalCorrect/prog.totalSeen) : 0;
   main.appendChild(el("div",{class:"herostats", style:"border-top:none; padding-top:0; margin-top:0; margin-bottom:28px"},
     stat(dueCount(), "due for review"),
     stat(prog.streak||0, "day streak"),
-    stat(acc+"%", "lifetime accuracy"),
-    stat(prog.totalSeen||0, "answered")));
-
+    stat(dailyAccuracy()+"%", "today's accuracy"),
+    stat(prog.points||0, "points")));
   const card = el("section",{class:"card setup"});
   card.appendChild(el("h2",{class:"cardh"},"New drill"));
   // module picker
@@ -2016,6 +2193,14 @@ function scopeControls(module, store, onChange){
   if(module==="adjadv"){
     box.appendChild(subhead("Tasks"));
     box.appendChild(checkGroup(cfg.tasks, sc, "tasks", onChange));
+  }
+  if(module==="participles"){
+    box.appendChild(subhead("Participle"));
+    box.appendChild(checkGroup(cfg.typeGroups, sc, "types", onChange));
+  }
+  if(module==="infinitives"){
+    box.appendChild(subhead("Infinitive"));
+    box.appendChild(checkGroup(cfg.formGroups, sc, "forms", onChange));
   }
   return field("Scope", box);
 }
@@ -2089,6 +2274,7 @@ function renderDrill(main){
   }
   else if(q.kind==="selfmark"){
     const revealBtn = el("button",{class:"primary", onclick:()=>{
+      if(state.session.answered) return;
       feedback.innerHTML="";
       feedback.appendChild(el("div",{class:"model"}, el("span",{class:"muted small"},"Model translation"), el("div",{}, q.model)));
       feedback.appendChild(el("div",{class:"selfmark"},
@@ -2237,17 +2423,28 @@ function caseKey(){
 /* ---------- progress ---------- */
 function renderProgress(main){
   const prog = DB.progress(state.user.uid);
-  const acc = prog.totalSeen? Math.round(100*prog.totalCorrect/prog.totalSeen):0;
+  const days = periodDays(state.ui.progPeriod);
+  const agg = historyAggregate(prog.history, days);
+  const acc = agg.seen ? Math.round(100*agg.correct/agg.seen) : 0;
   main.appendChild(el("section",{class:"hero compact"},
     el("p",{class:"eyebrow"},"Ratio"),
-    el("h1",{class:"display"},"Your progress"),
-    el("div",{class:"herostats"},
-      stat(acc+"%","lifetime accuracy"), stat(prog.streak||0,"day streak"),
-      stat(dueCount(),"due for review"), stat(Object.keys(prog.items).length,"forms tracked"))));
+    el("h1",{class:"display"},"Your progress")));
+
+  const pc = el("section",{class:"card"});
+  pc.appendChild(el("h2",{class:"cardh"},"Accuracy over time"));
+  pc.appendChild(field("Period", periodSelector(state.ui.progPeriod, (id)=>{ state.ui.progPeriod=id; renderApp(); })));
+  pc.appendChild(el("div",{class:"herostats"},
+    stat(acc+"%", "accuracy this period"),
+    stat(agg.points, "points this period"),
+    stat(agg.seen, "answered this period"),
+    stat(prog.streak||0, "day streak")));
+  pc.appendChild(dailyChart(prog.history, days));
+  pc.appendChild(el("p",{class:"muted small"}, "Each bar is one day; height is that day's accuracy. Hover for detail."));
+  main.appendChild(pc);
 
   const cats = Object.entries(prog.stats).sort((a,b)=> (a[1].correct/a[1].seen) - (b[1].correct/b[1].seen));
   const card = el("section",{class:"card"});
-  card.appendChild(el("h2",{class:"cardh"},"Accuracy by category"));
+  card.appendChild(el("h2",{class:"cardh"},"Accuracy by category (all time)"));
   if(!cats.length) card.appendChild(el("p",{class:"muted"},"No data yet. Complete a drill to populate this."));
   cats.forEach(([cat,c])=>{
     const p = Math.round(100*c.correct/c.seen);
@@ -2272,8 +2469,65 @@ function renderProgress(main){
 }
 function prettyCat(cat){
   const [a,b]=cat.split(":");
-  const map={decline:"Noun decl.",conjugate:"Verb conj.",adj:"Adjective",comparison:"Comparison",adverb:"Adverb",pronoun:"Pronoun",parse:"Parsing",syntax:"Syntax",translate:"Translation"};
+  const map={decline:"Noun decl.",conjugate:"Verb conj.",adj:"Adjective",comparison:"Comparison",adverb:"Adverb",pronoun:"Pronoun",parse:"Parsing",participle:"Participle",infinitive:"Infinitive",translate:"Translation"};
   return (map[a]||a)+(b?` · ${b}`:"");
+}
+
+/* ---------- leaderboard (class points by period) ---------- */
+function renderLeaderboard(main){
+  const me = state.user;
+  main.appendChild(el("section",{class:"hero compact"},
+    el("p",{class:"eyebrow"},"Certāmen"),
+    el("h1",{class:"display"},"Leaderboard")));
+
+  const classes = DB.classes().filter(c => me.role==="teacher" ? c.teacherId===me.uid : (me.classIds||[]).includes(c.id));
+  const card = el("section",{class:"card"});
+  card.appendChild(el("h2",{class:"cardh"},"Class points"));
+  if(!classes.length){ card.appendChild(el("p",{class:"muted"}, me.role==="teacher"?"Create a class to see its leaderboard.":"Join a class to see its leaderboard.")); main.appendChild(card); return; }
+  if(!state.ui.lbClassId || !classes.find(c=>c.id===state.ui.lbClassId)) state.ui.lbClassId = classes[0].id;
+
+  if(classes.length>1){
+    const sel = el("select",{class:"parse-select", onchange:(e)=>{ state.ui.lbClassId=e.target.value; renderApp(); }});
+    classes.forEach(c=> sel.appendChild(el("option",{value:c.id}, c.name))); sel.value=state.ui.lbClassId;
+    card.appendChild(field("Class", sel));
+  }
+  card.appendChild(field("Period", periodSelector(state.ui.lbPeriod, (id)=>{ state.ui.lbPeriod=id; renderApp(); })));
+  const days = periodDays(state.ui.lbPeriod);
+
+  const rows = [];
+  // always include the current user from local progress
+  const myProg = DB.progress(me.uid);
+  const myDaily = {}; for(const k in (myProg.history||{})) myDaily[k]=myProg.history[k].points||0;
+  rows.push({ uid:me.uid, name:(me.displayName||"You"), pts:pointsInPeriod(myDaily, days), me:true });
+
+  if(FIREBASE_ENABLED){
+    state._lbScores = state._lbScores || {}; state._lbLoading = state._lbLoading || {};
+    const cid = state.ui.lbClassId;
+    const cached = state._lbScores[cid];
+    if(cached === undefined){
+      if(!state._lbLoading[cid]){
+        state._lbLoading[cid]=true;
+        Cloud.fetchClassScores(cid).then(list=>{ state._lbScores[cid]=list; state._lbLoading[cid]=false; renderApp(); });
+      }
+      card.appendChild(el("p",{class:"muted small"}, "Loading class scores…"));
+    } else {
+      cached.forEach(s=>{ if(s.uid===me.uid) return; rows.push({ uid:s.uid, name:s.name||"Student", pts:pointsInPeriod(s.daily, days) }); });
+      card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ delete state._lbScores[cid]; renderApp(); }}, "Refresh"));
+    }
+  } else {
+    card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts for class comparison."));
+  }
+
+  rows.sort((a,b)=> b.pts-a.pts);
+  const t = el("table",{class:"roster"});
+  t.appendChild(el("tr",{}, el("th",{},"#"), el("th",{},"Student"), el("th",{},"Points")));
+  rows.forEach((r,i)=>{
+    const tr = el("tr",{}, el("td",{}, String(i+1)), el("td",{}, r.name + (r.me?" (you)":"")), el("td",{}, String(r.pts)));
+    if(r.me) tr.style.fontWeight="600";
+    t.appendChild(tr);
+  });
+  card.appendChild(t);
+  main.appendChild(card);
 }
 
 /* ---------- class / dashboard (renders from DB; identical under Firebase) ---------- */
