@@ -1652,9 +1652,8 @@ function dailyChart(history, days){
   const wrap = el("div",{class:"daychart"});
   keys.forEach(k=>{
     const h = history[k]; const acc = h.seen? Math.round(100*h.correct/h.seen):0;
-    const col = acc>=80?"var(--ok)":acc>=50?"var(--brass)":"var(--err)";
     wrap.appendChild(el("div",{class:"daybar", title:`${k}: ${acc}% · ${h.seen} answered · ${h.points} pts`,
-      style:`height:${Math.max(4,acc)}%; background:${col}`}));
+      style:`height:${Math.max(4,acc)}%; background:var(--accent)`}));
   });
   return wrap;
 }
@@ -2249,7 +2248,7 @@ function renderHome(main){
   card.appendChild(scopeControls(setupChoice.module, setupChoice.scope, ()=>renderHome(main)));
   // mode
   const modeRow = el("div",{class:"chooser"});
-  [["practice","Practice (endless, instant feedback)"],["quiz","Quiz ("+state.settings.quizCount+" questions, scored)"]].forEach(([v,l])=>{
+  [["practice","Practice"],["quiz","Quiz"]].forEach(([v,l])=>{
     modeRow.appendChild(el("button",{class:"choice"+(setupChoice.mode===v?" sel":""), onclick:()=>{ setupChoice.mode=v; renderHome(main); }}, l));
   });
   card.appendChild(field("Mode", modeRow));
@@ -2536,7 +2535,6 @@ function renderProgress(main){
     stat(agg.seen, "answered this period"),
     stat(prog.streak||0, "day streak")));
   pc.appendChild(dailyChart(prog.history, days));
-  pc.appendChild(el("p",{class:"muted small"}, "Each bar is one day; height is that day's accuracy. Hover for detail."));
   main.appendChild(pc);
 
   const cats = Object.entries(prog.stats).sort((a,b)=> (a[1].correct/a[1].seen) - (b[1].correct/b[1].seen));
@@ -2551,18 +2549,6 @@ function renderProgress(main){
       el("div",{class:"barval"}, `${p}% · ${c.seen}`)));
   });
   main.appendChild(card);
-
-  // weakest forms / review queue
-  const t=now();
-  const due = Object.entries(prog.items).filter(([k,i])=>i.due&&i.due<=t&&i.box>0).slice(0,40);
-  const weak = Object.entries(prog.items).filter(([k,i])=>i.seen>=2 && i.correct/i.seen<0.6).slice(0,40);
-  const q = el("section",{class:"card"});
-  q.appendChild(el("h2",{class:"cardh"},"Review queue"));
-  q.appendChild(el("p",{class:"muted small"}, `${due.length} forms are due now; ${weak.length} forms are below 60% accuracy.`));
-  const list = el("div",{class:"mistakes"});
-  (weak.length?weak:due).slice(0,24).forEach(([k,i])=> list.appendChild(el("span",{class:"misitem"}, k.split(":").slice(1).join(" "), el("span",{class:"misacc"}, ` ${Math.round(100*i.correct/Math.max(i.seen,1))}%`))));
-  q.appendChild(list);
-  main.appendChild(q);
 }
 function prettyCat(cat){
   const [a,b]=cat.split(":");
