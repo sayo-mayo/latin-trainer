@@ -268,6 +268,18 @@ table.roster tr:hover td{background:color-mix(in srgb,var(--surface-2) 50%, tran
 tr.nosub td{color:var(--muted)}
 .scorechips{display:flex; flex-wrap:wrap; gap:5px}
 .scorechip{font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; border:1px solid var(--line)}
+.asg-due{font-size:12px; color:var(--muted); display:inline-block}
+.asg-due.overdue{color:var(--err)}
+.late-tag{color:var(--warn); font-weight:600}
+.asg-assignees{margin-top:14px}
+.assignee-chips{display:flex; flex-wrap:wrap; gap:8px}
+.assignee{font-size:13px; padding:6px 12px; border-radius:20px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+.assignee:hover{border-color:var(--accent)}
+.assignee.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink); font-weight:600}
+.asg-actions{margin-top:14px; display:flex; justify-content:flex-end}
+button.danger{background:transparent; color:var(--err); border:1px solid color-mix(in srgb,var(--err) 35%, var(--line)); border-radius:9px; cursor:pointer; transition:background .15s, border-color .15s; font-family:var(--ui)}
+button.danger:hover{background:color-mix(in srgb,var(--err) 10%, var(--surface)); border-color:var(--err)}
+button.danger.small{padding:7px 13px; font-size:13px}
 .scorechip.hi{color:var(--ok); background:color-mix(in srgb,var(--ok) 11%, var(--surface)); border-color:color-mix(in srgb,var(--ok) 32%, var(--line))}
 .scorechip.mid{color:var(--brass); background:color-mix(in srgb,var(--brass) 11%, var(--surface)); border-color:color-mix(in srgb,var(--brass) 32%, var(--line))}
 .scorechip.lo{color:var(--err); background:color-mix(in srgb,var(--err) 11%, var(--surface)); border-color:color-mix(in srgb,var(--err) 32%, var(--line))}
@@ -348,13 +360,13 @@ window.LVDVS_FIREBASE_CONFIG = {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 try {
   const app = initializeApp(window.LVDVS_FIREBASE_CONFIG);
   window.LVDVS_FB = {
     auth: getAuth(app), db: getFirestore(app),
-    api: { doc, getDoc, setDoc, collection, query, where, getDocs,
+    api: { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs,
            onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
            GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail }
   };
@@ -1466,6 +1478,7 @@ const DB = {
   setClasses(c){ kv.setJSON("lvdvs:classes", c); Cloud.push("classes", c); },
   assignments(){ return kv.getJSON("lvdvs:assignments", []); },
   setAssignments(a){ kv.setJSON("lvdvs:assignments", a); Cloud.push("assignments", a); },
+  deleteAssignment(id){ const arr=DB.assignments().filter(a=>a.id!==id); kv.setJSON("lvdvs:assignments", arr); Cloud.remove("assignments", id); },
   attempts(){ return kv.getJSON("lvdvs:attempts", []); },
   setAttempts(a){ kv.setJSON("lvdvs:attempts", a); Cloud.push("attempts", a); }
 };
@@ -1571,6 +1584,7 @@ const Cloud = {
       else if(kind==="scores" && state.user) api.setDoc(api.doc(db,"scores",state.user.uid), payload);
     }catch(e){}
   },
+  remove(coll, id){ if(!this.active || !this.fb) return; const { db, api } = this.fb; try{ api.deleteDoc(api.doc(db, coll, id)); }catch(e){} },
   signIn(email,pw){ const {auth,api}=this.fb; return api.signInWithEmailAndPassword(auth,email,pw); },
   resetPassword(email){ const {auth,api}=this.fb; return api.sendPasswordResetEmail(auth,email); },
   signUp(email,pw,displayName,role){ this.pendingSignup={displayName,role}; const {auth,api}=this.fb; return api.createUserWithEmailAndPassword(auth,email,pw); },
@@ -2403,7 +2417,7 @@ const DEFAULT_SCOPE = {
   translate:{}
 };
 const setupChoice = { module:"decline", scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)), mode:"practice" };
-const asgChoice = { title:"", classId:"", module:"decline", count:15, scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)) };
+const asgChoice = { title:"", classId:"", module:"decline", count:15, due:"", assignedTo:[], scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)) };
 
 function renderHome(main){
   main.innerHTML = "";
@@ -2945,21 +2959,49 @@ function renderTeacher(main){
   else {
     if(!classes.find(c=>c.id===asgChoice.classId)) asgChoice.classId = classes[0].id;
     if(!SCOPE[asgChoice.module]) asgChoice.module = "decline";
+    const curClass = classes.find(c=>c.id===asgChoice.classId);
     const title = el("input",{class:"text", placeholder:"Assignment title", value:asgChoice.title, oninput:(e)=>{ asgChoice.title=e.target.value; }});
-    const classSel = el("select",{class:"parse-select", onchange:(e)=>{ asgChoice.classId=e.target.value; }});
+    const classSel = el("select",{class:"parse-select", onchange:(e)=>{ asgChoice.classId=e.target.value; asgChoice.assignedTo=[]; renderApp(); }});
     classes.forEach(c=> classSel.appendChild(el("option",{value:c.id},c.name))); classSel.value=asgChoice.classId;
     const modSel = el("select",{class:"parse-select", onchange:(e)=>{ asgChoice.module=e.target.value; renderApp(); }});
     Object.keys(SCOPE).forEach(m=> modSel.appendChild(el("option",{value:m},SCOPE[m].label))); modSel.value=asgChoice.module;
     const count = el("input",{class:"text num", type:"number", value:String(asgChoice.count), min:"5", max:"50", oninput:(e)=>{ asgChoice.count=parseInt(e.target.value,10)||15; }});
+    const dueInp = el("input",{class:"text", type:"date", value:asgChoice.due||"", oninput:(e)=>{ asgChoice.due=e.target.value; }});
     ca.appendChild(el("div",{class:"formgrid"},
-      labeled("Title", title), labeled("Class", classSel), labeled("Module", modSel), labeled("Questions", count)));
+      labeled("Title", title), labeled("Class", classSel), labeled("Module", modSel), labeled("Questions", count), labeled("Due date", dueInp)));
     ca.appendChild(scopeControls(asgChoice.module, asgChoice.scope, ()=>renderApp()));
+
+    // assign to whole class or specific students
+    const roster = (curClass && curClass.enrolled) || [];
+    const af = el("div",{class:"asg-assignees"});
+    af.appendChild(el("div",{class:"fieldlabel"}, "Assign to"));
+    if(!roster.length){
+      af.appendChild(el("p",{class:"muted small"}, Cloud.active? "No students enrolled yet — this will be available to everyone who joins." : "Connect accounts to assign to specific students. For now this goes to the whole class."));
+      asgChoice.assignedTo = [];
+    } else {
+      const note = el("p",{class:"muted small", style:"margin:0 0 8px"}, asgChoice.assignedTo.length? `${asgChoice.assignedTo.length} of ${roster.length} selected` : "Everyone in the class (select names to narrow)");
+      af.appendChild(note);
+      const chipwrap = el("div",{class:"assignee-chips"});
+      roster.forEach(s=>{
+        const on = asgChoice.assignedTo.includes(s.uid);
+        chipwrap.appendChild(el("button",{class:"assignee"+(on?" on":""), onclick:()=>{
+          if(on) asgChoice.assignedTo = asgChoice.assignedTo.filter(u=>u!==s.uid);
+          else asgChoice.assignedTo = [...asgChoice.assignedTo, s.uid];
+          renderApp();
+        }}, s.displayName||s.uid));
+      });
+      af.appendChild(chipwrap);
+    }
+    ca.appendChild(af);
+
     ca.appendChild(el("button",{class:"primary", onclick:()=>{
       const t = title.value.trim(); if(!t) return;
       const a={ id:uid4(), title:t, classId:classSel.value, module:asgChoice.module,
         scope: JSON.parse(JSON.stringify(asgChoice.scope[asgChoice.module]||DEFAULT_SCOPE[asgChoice.module]||{})),
-        count: parseInt(count.value,10)||15, createdBy: state.user.uid, created: now() };
-      const arr=DB.assignments(); arr.push(a); DB.setAssignments(arr); asgChoice.title=""; title.value=""; renderApp();
+        count: parseInt(count.value,10)||15, createdBy: state.user.uid, created: now(),
+        due: dueInp.value ? new Date(dueInp.value+"T23:59:59").getTime() : null,
+        assignedTo: (asgChoice.assignedTo||[]).slice() };
+      const arr=DB.assignments(); arr.push(a); DB.setAssignments(arr); asgChoice.title=""; asgChoice.due=""; asgChoice.assignedTo=[]; title.value=""; renderApp();
     }}, "Create assignment"));
   }
   if(assignments.length) ca.appendChild(el("div",{class:"asg-listhead"}, "Active assignments"));
@@ -2967,10 +3009,13 @@ function renderTeacher(main){
     const cls = classes.find(c=>c.id===a.classId);
     const subs = attempts.filter(t=>t.assignmentId===a.id);
     const avg = subs.length? Math.round(subs.reduce((s,t)=>s+t.pct,0)/subs.length):null;
+    const overdue = a.due && now() > a.due;
+    const targetTxt = (a.assignedTo && a.assignedTo.length) ? ` · ${a.assignedTo.length} student${a.assignedTo.length===1?"":"s"}` : "";
+    const main2 = el("div",{class:"asg-main"}, el("b",{},a.title),
+      el("span",{class:"asg-scope muted small"}, `${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q · ${cls?cls.name:"—"}${targetTxt}`));
+    if(a.due) main2.appendChild(el("span",{class:"asg-due"+(overdue?" overdue":"")}, (overdue?"Was due ":"Due ")+fmtDue(a.due)));
     const det = el("details",{class:"asg"});
-    det.appendChild(el("summary",{},
-      el("div",{class:"asg-main"}, el("b",{},a.title),
-        el("span",{class:"asg-scope muted small"}, `${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q · ${cls?cls.name:"—"}`)),
+    det.appendChild(el("summary",{}, main2,
       el("span",{class:"asg-meta muted small"}, subs.length? `${subs.length} submitted · avg ${avg}%` : "no submissions")));
     det.appendChild(assignmentBreakdown(a, cls, attempts));
     ca.appendChild(det);
@@ -2995,10 +3040,24 @@ function renderTeacher(main){
 }
 function labeled(l,node){ return el("label",{class:"pcell"}, el("span",{class:"pl small muted"}, l), node); }
 function fmtWhen(ts){ if(!ts) return "—"; try{ return new Date(ts).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }catch(e){ return "—"; } }
+function fmtDue(ts){ try{ const d=new Date(ts), t=new Date(); const o = d.getFullYear()===t.getFullYear()? {day:"numeric",month:"short"} : {day:"numeric",month:"short",year:"numeric"}; return d.toLocaleDateString(undefined,o); }catch(e){ return "—"; } }
+function deleteAssignment(a){
+  const ok = (typeof confirm==="function") ? confirm(`Delete “${a.title}”? It will be removed for students. Existing submissions are kept.`) : true;
+  if(!ok) return;
+  DB.deleteAssignment(a.id);
+  renderApp();
+}
+function latestCell(last, a){
+  const wrap = el("span",{}, `${last.pct}% · ${fmtWhen(last.when)}`);
+  if(a.due && last.when > a.due) wrap.appendChild(el("span",{class:"late-tag"}, " · late"));
+  return wrap;
+}
 function assignmentBreakdown(a, cls, attempts){
   const subs = attempts.filter(t=>t.assignmentId===a.id);
   const byId = {};
-  ((cls && cls.enrolled) || []).forEach(s=>{ byId[s.uid] = { name:s.displayName||s.uid, list:[] }; });
+  let enrolled = (cls && cls.enrolled) || [];
+  if(a.assignedTo && a.assignedTo.length) enrolled = enrolled.filter(s=> a.assignedTo.includes(s.uid));
+  enrolled.forEach(s=>{ byId[s.uid] = { name:s.displayName||s.uid, list:[] }; });
   subs.forEach(t=>{ const id=t.studentUid||t.studentName; (byId[id] = byId[id] || { name:t.studentName||id, list:[] }).list.push(t); });
   const rows = Object.values(byId).map(s=>{
     const list = s.list.slice().sort((x,y)=>(x.when||0)-(y.when||0));
@@ -3008,22 +3067,30 @@ function assignmentBreakdown(a, cls, attempts){
       scores: list.map(t=>t.pct) };
   });
   rows.sort((x,y)=>{ if(x.n && !y.n) return -1; if(!x.n && y.n) return 1; if(x.n&&y.n) return y.best-x.best; return x.name.localeCompare(y.name); });
-  if(!rows.length) return el("div",{class:"asg-body"}, el("p",{class:"muted small"},
-    Cloud.active? "No students enrolled yet." : "Per-student data appears once students submit. Connect accounts for a full class roster."));
-  const t = el("table",{class:"roster breakdown"});
-  t.appendChild(el("tr",{}, el("th",{},"Student"), el("th",{},"Attempts"), el("th",{},"Best"), el("th",{},"Latest"), el("th",{},"Each attempt")));
-  rows.forEach(r=>{
-    const chips = el("div",{class:"scorechips"});
-    if(r.scores.length) r.scores.forEach(p=> chips.appendChild(el("span",{class:"scorechip "+(p>=80?"hi":p>=50?"mid":"lo")}, p+"%")));
-    else chips.appendChild(el("span",{class:"muted small"},"not submitted"));
-    t.appendChild(el("tr",{class:r.n?"":"nosub"},
-      el("td",{}, r.name),
-      el("td",{}, r.n? String(r.n) : "—"),
-      el("td",{}, r.best==null? "—" : el("b",{}, r.best+"%")),
-      el("td",{}, r.last? `${r.last.pct}% · ${fmtWhen(r.last.when)}` : "—"),
-      el("td",{}, chips)));
-  });
-  return el("div",{class:"asg-body"}, t);
+
+  const body = el("div",{class:"asg-body"});
+  if(!rows.length){
+    body.appendChild(el("p",{class:"muted small"},
+      Cloud.active? "No students assigned yet." : "Per-student data appears once students submit. Connect accounts for a full class roster."));
+  } else {
+    const t = el("table",{class:"roster breakdown"});
+    t.appendChild(el("tr",{}, el("th",{},"Student"), el("th",{},"Attempts"), el("th",{},"Best"), el("th",{},"Latest"), el("th",{},"Each attempt")));
+    rows.forEach(r=>{
+      const chips = el("div",{class:"scorechips"});
+      if(r.scores.length) r.scores.forEach(p=> chips.appendChild(el("span",{class:"scorechip "+(p>=80?"hi":p>=50?"mid":"lo")}, p+"%")));
+      else chips.appendChild(el("span",{class:"muted small"},"not submitted"));
+      t.appendChild(el("tr",{class:r.n?"":"nosub"},
+        el("td",{}, r.name),
+        el("td",{}, r.n? String(r.n) : "—"),
+        el("td",{}, r.best==null? "—" : el("b",{}, r.best+"%")),
+        el("td",{}, r.last? latestCell(r.last, a) : "—"),
+        el("td",{}, chips)));
+    });
+    body.appendChild(t);
+  }
+  body.appendChild(el("div",{class:"asg-actions"},
+    el("button",{class:"danger small", onclick:()=>deleteAssignment(a)}, "Delete assignment")));
+  return body;
 }
 function scopeSummary(module, scope){
   if(!scope) return "all";
@@ -3079,14 +3146,19 @@ function renderStudent(main){
 
   const ac = el("section",{class:"card"});
   ac.appendChild(el("h2",{class:"cardh"},"Assignments"));
-  const mine = DB.assignments().filter(a=> (me.classIds||[]).includes(a.classId));
+  const mine = DB.assignments()
+    .filter(a=> (me.classIds||[]).includes(a.classId) && (!a.assignedTo || !a.assignedTo.length || a.assignedTo.includes(me.uid)))
+    .sort((x,y)=> (x.due||Infinity) - (y.due||Infinity));
   const attempts = DB.attempts();
   if(!mine.length) ac.appendChild(el("p",{class:"muted small"}, joined.length?"No assignments yet.":"Join a class to see assignments."));
   mine.forEach(a=>{
-    const done = attempts.filter(t=>t.assignmentId===a.id && (t.studentName||me.displayName)===me.displayName);
+    const done = attempts.filter(t=>t.assignmentId===a.id && (t.studentUid===me.uid || (t.studentName||me.displayName)===me.displayName));
     const best = done.length? Math.max(...done.map(t=>t.pct)):null;
-    ac.appendChild(el("div",{class:"classrow"},
-      el("div",{}, el("b",{},a.title), el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q`)),
+    const overdue = a.due && now() > a.due && !done.length;
+    const info = el("div",{}, el("b",{},a.title),
+      el("span",{class:"muted small"}, `  ${SCOPE[a.module]?SCOPE[a.module].label:a.module} · ${scopeSummary(a.module,a.scope)} · ${a.count} Q`));
+    if(a.due) info.appendChild(el("div",{class:"asg-due small"+(overdue?" overdue":""), style:"margin-top:4px"}, (overdue?"Overdue · was due ":"Due ")+fmtDue(a.due)));
+    ac.appendChild(el("div",{class:"classrow"}, info,
       el("div",{},
         best!=null? el("span",{class:"muted small"}, `best ${best}%  `) : null,
         el("button",{class:"primary small", onclick:()=>startAssignment(a)}, done.length?"Retry":"Start"))));
