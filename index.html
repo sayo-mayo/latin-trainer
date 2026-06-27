@@ -271,9 +271,8 @@ tr.nosub td{color:var(--muted)}
 .asg-due{font-size:12px; color:var(--muted); display:inline-block}
 .asg-due.overdue{color:var(--err)}
 .late-tag{color:var(--warn); font-weight:600}
-.asg-assignees{margin-top:14px}
 .assignee-chips{display:flex; flex-wrap:wrap; gap:8px}
-.assignee{font-size:13px; padding:6px 12px; border-radius:20px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+.assignee{font-family:var(--ui); font-size:13px; padding:7px 14px; border-radius:20px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s}
 .assignee:hover{border-color:var(--accent)}
 .assignee.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink); font-weight:600}
 .asg-actions{margin-top:14px; display:flex; justify-content:flex-end}
@@ -2908,7 +2907,6 @@ function renderLeaderboard(main){
         card.appendChild(el("p",{class:"muted small"}, "Loading global scores…"));
       } else {
         state._lbGlobal.forEach(s=>{ if(s.uid===me.uid) return; rows.push({ uid:s.uid, name:s.name||"Student", pts:correctInPeriod(s.daily, days), anon:!!s.anon }); });
-        card.appendChild(el("p",{class:"muted small", style:"margin:2px 0 8px"}, "Everyone using Latin Trainer, ranked by correct answers. Names you've chosen to hide show as “Anonymous.”"));
         card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ state._lbGlobal=undefined; renderApp(); }}, "Refresh"));
       }
     } else card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts to compete globally."));
@@ -2973,14 +2971,12 @@ function renderTeacher(main){
 
     // assign to whole class or specific students
     const roster = (curClass && curClass.enrolled) || [];
-    const af = el("div",{class:"asg-assignees"});
-    af.appendChild(el("div",{class:"fieldlabel"}, "Assign to"));
+    const af = el("div",{});
     if(!roster.length){
-      af.appendChild(el("p",{class:"muted small"}, Cloud.active? "No students enrolled yet — this will be available to everyone who joins." : "Connect accounts to assign to specific students. For now this goes to the whole class."));
+      af.appendChild(el("p",{class:"muted small", style:"margin:6px 0 0"}, Cloud.active? "No students enrolled yet — this will be available to everyone who joins." : "Connect accounts to assign to specific students. For now this goes to the whole class."));
       asgChoice.assignedTo = [];
     } else {
-      const note = el("p",{class:"muted small", style:"margin:0 0 8px"}, asgChoice.assignedTo.length? `${asgChoice.assignedTo.length} of ${roster.length} selected` : "Everyone in the class (select names to narrow)");
-      af.appendChild(note);
+      af.appendChild(el("p",{class:"muted small", style:"margin:0 0 12px"}, asgChoice.assignedTo.length? `${asgChoice.assignedTo.length} of ${roster.length} selected` : "Everyone in the class — select names to narrow"));
       const chipwrap = el("div",{class:"assignee-chips"});
       roster.forEach(s=>{
         const on = asgChoice.assignedTo.includes(s.uid);
@@ -2992,9 +2988,9 @@ function renderTeacher(main){
       });
       af.appendChild(chipwrap);
     }
-    ca.appendChild(af);
+    ca.appendChild(field("Assign to", af));
 
-    ca.appendChild(el("button",{class:"primary", onclick:()=>{
+    ca.appendChild(el("button",{class:"primary", style:"margin-top:20px", onclick:()=>{
       const t = title.value.trim(); if(!t) return;
       const a={ id:uid4(), title:t, classId:classSel.value, module:asgChoice.module,
         scope: JSON.parse(JSON.stringify(asgChoice.scope[asgChoice.module]||DEFAULT_SCOPE[asgChoice.module]||{})),
