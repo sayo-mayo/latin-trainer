@@ -250,6 +250,8 @@ table.roster tr:hover td{background:color-mix(in srgb,var(--surface-2) 50%, tran
 
 .anon-toggle{display:flex; align-items:center; gap:9px; margin:12px 0 2px; cursor:pointer; color:var(--muted); font-size:13px}
 .anon-toggle input{width:16px; height:16px; accent-color:var(--accent); cursor:pointer}
+.name-edit{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+button.ghost.small{padding:8px 14px; font-size:13px}
 .asg-listhead{margin:26px 0 14px; padding-top:18px; border-top:1px solid var(--line); font-family:var(--display); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
 /* teacher: per-assignment drill-down */
 .asg{border:1px solid var(--line); border-radius:12px; margin-bottom:14px; background:var(--surface); box-shadow:var(--shadow-sm)}
@@ -275,7 +277,21 @@ tr.nosub td{color:var(--muted)}
 .assignee{font-family:var(--ui); font-size:13px; padding:7px 14px; border-radius:20px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s}
 .assignee:hover{border-color:var(--accent)}
 .assignee.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink); font-weight:600}
-.asg-actions{margin-top:14px; display:flex; justify-content:flex-end}
+.asg-actions{margin-top:14px; display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap}
+.form-actions{display:flex; gap:10px; margin-top:20px; align-items:center; flex-wrap:wrap}
+.classroster{border-bottom:1px solid var(--line); padding:4px 0}
+.classroster>summary{list-style:none; cursor:pointer}
+.classroster>summary::-webkit-details-marker{display:none}
+.classroster[open]>summary .classrow{border-bottom:none}
+.rosterlist{padding:4px 0 12px 6px; display:flex; flex-direction:column; gap:7px}
+.rosteritem{display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px}
+button.danger.small.ghost{background:transparent; color:var(--err); border:1px solid var(--line-2); padding:5px 12px}
+button.danger.small.ghost:hover{border-color:var(--err); background:color-mix(in srgb, var(--err) 8%, transparent)}
+.roster-row.has-history{cursor:pointer}
+.roster-row.has-history:hover td{color:var(--accent-ink)}
+.histlist{display:flex; flex-direction:column; gap:6px; padding:4px 2px 10px}
+.histrow{display:flex; align-items:baseline; justify-content:space-between; gap:14px}
+.barfill.miss{background:var(--err)}
 button.danger{background:transparent; color:var(--err); border:1px solid color-mix(in srgb,var(--err) 35%, var(--line)); border-radius:9px; cursor:pointer; transition:background .15s, border-color .15s; font-family:var(--ui)}
 button.danger:hover{background:color-mix(in srgb,var(--err) 10%, var(--surface)); border-color:var(--err)}
 button.danger.small{padding:7px 13px; font-size:13px}
@@ -403,7 +419,7 @@ function nounStem(entry){
       // -er / -ir nouns: stem from genitive (puerī -> puer, agrī -> agr)
       return chop(gen, "ī");
     case 3: return chop(gen, "is");
-    case 4: return lemma.endsWith("ū") ? chop(lemma, "ū") : chop(lemma, "us");
+    case 4: return chop(gen, "us");
     case 5: return chop(lemma, "ēs");
   }
 }
@@ -1080,7 +1096,7 @@ const LEXICON = {
     {"key": "italia", "lemma": "Italia", "gen": "Italiae", "gender": "f", "decl": 1, "gloss": "Italy", "cite": "Italia, Italiae, f"},
     {"key": "iter", "lemma": "iter", "gen": "itineris", "gender": "n", "decl": 3, "gloss": "journey", "cite": "iter, itineris, n"},
     {"key": "iudex", "lemma": "iudex", "gen": "iudicis", "gender": "m", "decl": 3, "gloss": "judge", "cite": "iudex, iudicis, c"},
-    {"key": "iuppiter", "lemma": "Iuppiter", "gen": "Iovis", "gender": "m", "decl": 3, "gloss": "Jupiter", "cite": "Iuppiter, Iovis, m"},
+    {"key": "iuppiter", "lemma": "Iuppiter", "gen": "Iovis", "gender": "m", "decl": 3, "noPlural": true, "gloss": "Jupiter", "cite": "Iuppiter, Iovis, m"},
     {"key": "iuvenis", "lemma": "iuvenis", "gen": "iuvenis", "gender": "m", "decl": 3, "gloss": "young man", "cite": "iuvenis, iuvenis, m"},
     {"key": "labor", "lemma": "labor", "gen": "laboris", "gender": "m", "decl": 3, "gloss": "work, task", "cite": "labor, laboris, m"},
     {"key": "lacrima", "lemma": "lacrima", "gen": "lacrimae", "gender": "f", "decl": 1, "gloss": "tear (cry)", "cite": "lacrima, lacrimae, f"},
@@ -1108,7 +1124,7 @@ const LEXICON = {
     {"key": "murus", "lemma": "murus", "gen": "muri", "gender": "m", "decl": 2, "gloss": "wall", "cite": "murus, muri, m"},
     {"key": "nauta", "lemma": "nauta", "gen": "nautae", "gender": "m", "decl": 1, "gloss": "sailor", "cite": "nauta, nautae, m"},
     {"key": "navis", "lemma": "navis", "gen": "navis", "gender": "f", "decl": 3, "istem": true, "gloss": "ship", "cite": "navis, navis, f"},
-    {"key": "nemo", "lemma": "nemo", "gen": "neminis", "gender": "m", "decl": 3, "gloss": "no one", "cite": "nemo, neminis, c"},
+    {"key": "nemo", "lemma": "nemo", "gen": "neminis", "gender": "m", "decl": 3, "noPlural": true, "gloss": "no one", "cite": "nemo, neminis, c"},
     {"key": "nomen", "lemma": "nomen", "gen": "nominis", "gender": "n", "decl": 3, "gloss": "name", "cite": "nomen, nominis, n"},
     {"key": "nox", "lemma": "nox", "gen": "noctis", "gender": "f", "decl": 3, "istem": true, "gloss": "night", "cite": "nox, noctis, f"},
     {"key": "nuntius", "lemma": "nuntius", "gen": "nuntii", "gender": "m", "decl": 2, "gloss": "messenger, message", "cite": "nuntius, nuntii, m"},
@@ -1521,8 +1537,8 @@ const Cloud = {
       return { uid:user.uid, displayName:d.displayName||user.email, email:user.email, role:d.role||"student", classIds:d.classIds||[], anon:!!d.anon };
     }
     const su = this.pendingSignup || {};
-    const profile = { uid:user.uid, displayName:su.displayName||user.email, email:user.email, role:su.role||"student", classIds:[], anon:false };
-    try{ await api.setDoc(ref, { displayName:profile.displayName, email:profile.email, role:profile.role, classIds:[], anon:false }); }catch(e){}
+    const profile = { uid:user.uid, displayName:su.displayName||user.email, email:user.email, role:su.role||"student", classIds:[], anon:true };
+    try{ await api.setDoc(ref, { displayName:profile.displayName, email:profile.email, role:profile.role, classIds:[], anon:true }); }catch(e){}
     this.pendingSignup = null;
     return profile;
   },
@@ -1536,10 +1552,11 @@ const Cloud = {
         qs.forEach(d=>classes.push(d.data()));
         for(const c of classes){
           try{ const us=await api.getDocs(api.query(api.collection(db,"users"), api.where("classIds","array-contains",c.id)));
-               c.enrolled=[]; us.forEach(u=>{ const d=u.data(); c.enrolled.push({uid:u.id, displayName:d.displayName||u.id}); }); }catch(e){ c.enrolled=[]; }
+               c.enrolled=[]; us.forEach(u=>{ const d=u.data(); c.enrolled.push({uid:u.id, displayName:d.displayName||u.id}); });
+               c.enrolled = c.enrolled.filter(s=>!(c.removed||[]).includes(s.uid)); }catch(e){ c.enrolled=[]; }
         }
       } else {
-        for(const cid of (profile.classIds||[])){ const cs=await api.getDoc(api.doc(db,"classes",cid)); if(cs&&cs.exists&&cs.exists()) classes.push(cs.data()); }
+        for(const cid of (profile.classIds||[])){ const cs=await api.getDoc(api.doc(db,"classes",cid)); if(cs&&cs.exists&&cs.exists()){ const cd=cs.data(); if(!(cd.removed||[]).includes(profile.uid)) classes.push(cd); } }
       }
     }catch(e){}
     kv.setJSON("lvdvs:classes", classes);
@@ -1577,7 +1594,7 @@ const Cloud = {
     try{
       if(kind==="profile") api.setDoc(api.doc(db,"users",payload.uid), { displayName:payload.displayName, email:payload.email||null, role:payload.role, classIds:payload.classIds||[], anon:!!payload.anon });
       else if(kind==="progress" && state.user) api.setDoc(api.doc(db,"progress",state.user.uid), payload);
-      else if(kind==="classes") payload.forEach(c=> api.setDoc(api.doc(db,"classes",c.id), { id:c.id, name:c.name, teacherId:c.teacherId, joinCode:c.joinCode }));
+      else if(kind==="classes") payload.forEach(c=> api.setDoc(api.doc(db,"classes",c.id), { id:c.id, name:c.name, teacherId:c.teacherId, joinCode:c.joinCode, removed:c.removed||[] }));
       else if(kind==="assignments") payload.forEach(a=> api.setDoc(api.doc(db,"assignments",a.id), a));
       else if(kind==="attempts") payload.forEach(t=> api.setDoc(api.doc(db,"attempts",t.id), t));
       else if(kind==="scores" && state.user) api.setDoc(api.doc(db,"scores",state.user.uid), payload);
@@ -1621,7 +1638,7 @@ const state = {
 function ensureLocalUser(){
   if(FIREBASE_ENABLED) return;
   let p = DB.profile("local");
-  if(!p){ p = { uid:"local", displayName:"Student", role:"student", classIds:[] }; DB.setProfile("local", p); }
+  if(!p){ p = { uid:"local", displayName:"Student", role:"student", classIds:[], anon:true }; DB.setProfile("local", p); }
   state.user = p;
 }
 
@@ -1649,6 +1666,7 @@ function recordResult(itemKey, category, correct){
   if(prog.lastDay !== today){ prog.streak = (prog.lastDay && (Date.parse(today)-Date.parse(prog.lastDay))<=DAY*1.5)? prog.streak+1 : 1; prog.lastDay = today; }
   DB.setProgress(state.user.uid, prog);
   pushScores(prog);
+  if(state.session && category){ const ch=state.session.catHits||(state.session.catHits={}); const e=ch[category]||(ch[category]={seen:0,correct:0}); e.seen++; if(correct) e.correct++; }
 }
 /* denormalised, peer-readable doc for the class leaderboard (daily correct counts) */
 function pushScores(prog){
@@ -1685,11 +1703,12 @@ function dailyChart(history, days){
   let keys = Object.keys(history||{}).filter(k=>!cut || k>=cut).sort();
   if(keys.length>60) keys = keys.slice(keys.length-60); // cap bars
   if(!keys.length){ return el("p",{class:"muted small"}, "No activity in this period yet."); }
+  const max = Math.max(1, ...keys.map(k=>history[k].correct||0));
   const wrap = el("div",{class:"daychart"});
   keys.forEach(k=>{
-    const h = history[k]; const acc = h.seen? Math.round(100*h.correct/h.seen):0;
-    wrap.appendChild(el("div",{class:"daybar", title:`${k}: ${acc}% · ${h.correct||0}/${h.seen} correct`,
-      style:`height:${Math.max(4,acc)}%; background:var(--accent)`}));
+    const h = history[k]; const c = h.correct||0; const hgt = Math.round(100*c/max);
+    wrap.appendChild(el("div",{class:"daybar", title:`${k}: ${c} correct of ${h.seen} answered`,
+      style:`height:${c?Math.max(6,hgt):2}%; background:var(--accent)`}));
   });
   return wrap;
 }
@@ -1854,7 +1873,7 @@ function pickScopeKeys(module, sel){
 function genDecline(sel){
   const keys = pickScopeKeys("decline", sel);
   const key = rand(keys); const e = nounEntry(key); const d = N.declineNoun(e);
-  const num = rand(N.NUMS);
+  const num = e.noPlural ? "sg" : rand(N.NUMS);
   const cas = rand(N.CASES);
   const answer = d[num][cas];
   return {
@@ -1925,7 +1944,6 @@ function participleForms(v, type){
     if(!pa.presentActive) return null;
     const nom = pa.presentActive.nom; const stem = (pa.presentActive.gen||"").replace(/is$/,"");
     const d = N.declineAdj3({m:nom,f:nom,n:nom}, stem);
-    ["m","f","n"].forEach(g=>{ if(d[g]&&d[g].sg) d[g].sg.abl = stem+"e"; }); // participial ablative -e
     return { decl:d, citation:`${nom}, ${pa.presentActive.gen}` };
   }
   const nom = type==="perfect" ? pa.perfectPassive : pa.futureActive;
@@ -2054,12 +2072,12 @@ function genderedTables(decl, itemKeyFn, cat){
 function genDeclineTable(sel){
   const e = nounEntry(rand(pickScopeKeys("decline", sel))); const d = N.declineNoun(e);
   const cat = "decline:"+e.decl;
-  const rows = N.CASES.map(cas=>({ label:N.CASE_LABEL[cas], caseTag:cas, cells:[
-    { answer:d.sg[cas], itemKey:`decline:${e.key}:${cas}:sg`, category:cat },
-    { answer:d.pl[cas], itemKey:`decline:${e.key}:${cas}:pl`, category:cat } ]}));
+  const nums = e.noPlural ? ["sg"] : ["sg","pl"];
+  const rows = N.CASES.map(cas=>({ label:N.CASE_LABEL[cas], caseTag:cas,
+    cells: nums.map(nm=>({ answer:d[nm][cas], itemKey:`decline:${e.key}:${cas}:${nm}`, category:cat })) }));
   return { kind:"table", category:cat, eyebrow:`Full table · ${ordinalDecl(e.decl)} declension`,
-    prompt:`Decline <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span> — every case, both numbers`,
-    tables:[{ colHeads:["singular","plural"], rows }], lemma:e, paradigm:()=>paradigmNoun(e,{}) };
+    prompt:`Decline <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span> — ${e.noPlural?"every case":"every case, both numbers"}`,
+    tables:[{ colHeads: nums.map(nm=> nm==="sg"?"singular":"plural"), rows }], lemma:e, paradigm:()=>paradigmNoun(e,{}) };
 }
 function genAdjTable(sel){
   const e = adjEntry(rand(pickScopeKeys("adjadv", sel)));
@@ -2244,14 +2262,16 @@ function generate(session){
 /* ---------------------------------------------------------------------------
    7. paradigm reference renderers (case-colour coded)
 --------------------------------------------------------------------------- */
-function caseTable(rowsByNum, hi){
+function caseTable(rowsByNum, hi, nums){
+  nums = nums || ["sg","pl"];
   const t = el("table",{class:"paradigm"});
-  const head = el("tr",{}, el("th",{},""), el("th",{},"singular"), el("th",{},"plural"));
+  const head = el("tr",{}, el("th",{},""));
+  nums.forEach(n=> head.appendChild(el("th",{}, n==="sg"?"singular":"plural")));
   t.appendChild(head);
   for(const cas of N.CASES){
     const tr = el("tr",{});
     tr.appendChild(el("td",{class:"case-label", "data-case":cas}, N.CASE_LABEL[cas]));
-    for(const num of ["sg","pl"]){
+    for(const num of nums){
       const v = rowsByNum[num] ? rowsByNum[num][cas] : "";
       const isHi = hi && hi.cas===cas && hi.num===num;
       tr.appendChild(el("td",{class:"form"+(isHi?" hi":""), "data-case":cas}, v||"—"));
@@ -2262,7 +2282,7 @@ function caseTable(rowsByNum, hi){
 }
 function paradigmNoun(e, hi){
   const d = N.declineNoun(e);
-  return wrapPara(`${e.cite} — ${ordinalDecl(e.decl)} declension`, caseTable(d, hi));
+  return wrapPara(`${e.cite} — ${ordinalDecl(e.decl)} declension`, caseTable(d, hi, e.noPlural?["sg"]:["sg","pl"]));
 }
 function paradigmAdj(e,g,hi){
   const d = e.type==="adj1"?N.declineAdj1(e.m,e.f,e.n):N.declineAdj3(e.nom,e.stem);
@@ -2416,7 +2436,28 @@ const DEFAULT_SCOPE = {
   translate:{}
 };
 const setupChoice = { module:"decline", scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)), mode:"practice" };
-const asgChoice = { title:"", classId:"", module:"decline", count:15, due:"", assignedTo:[], scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)) };
+const asgChoice = { title:"", classId:"", module:"decline", count:15, due:"", assignedTo:[], editId:null, scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)) };
+function dueToInput(ms){ const d=new Date(ms); const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), da=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${da}`; }
+function editAssignment(a){
+  asgChoice.editId=a.id; asgChoice.title=a.title||""; asgChoice.classId=a.classId; asgChoice.module=a.module;
+  asgChoice.count=a.count||15; asgChoice.assignedTo=(a.assignedTo||[]).slice();
+  asgChoice.due = a.due ? dueToInput(a.due) : "";
+  asgChoice.scope[a.module] = JSON.parse(JSON.stringify(a.scope||DEFAULT_SCOPE[a.module]||{}));
+  renderApp();
+  setTimeout(()=>{ const c=document.getElementById("asgCard"); if(c&&c.scrollIntoView) c.scrollIntoView({behavior:"smooth", block:"start"}); }, 30);
+}
+function duplicateAssignment(a){
+  const copy = Object.assign({}, a, { id:uid4(), title:(a.title||"Assignment")+" (copy)", createdBy:state.user.uid, created:now(),
+    assignedTo:(a.assignedTo||[]).slice(), scope:JSON.parse(JSON.stringify(a.scope||{})) });
+  const arr=DB.assignments(); arr.push(copy); DB.setAssignments(arr); renderApp();
+}
+function removeStudent(classId, sid){
+  if(typeof confirm==="function" && !confirm("Remove this student from the class? They lose access to its assignments and leaderboard.")) return;
+  const arr=DB.classes(); const c=arr.find(x=>x.id===classId); if(!c) return;
+  c.removed = Array.from(new Set([...(c.removed||[]), sid]));
+  if(c.enrolled) c.enrolled = c.enrolled.filter(s=>s.uid!==sid);
+  DB.setClasses(arr); renderApp();
+}
 
 function renderHome(main){
   main.innerHTML = "";
@@ -2779,16 +2820,14 @@ function renderProgress(main){
   const prog = DB.progress(state.user.uid);
   const days = periodDays(state.ui.progPeriod);
   const agg = historyAggregate(prog.history, days);
-  const acc = agg.seen ? Math.round(100*agg.correct/agg.seen) : 0;
   main.appendChild(el("section",{class:"hero compact"},
-    el("p",{class:"eyebrow"},"Ratio"),
+    el("p",{class:"eyebrow"},"Numerus"),
     el("h1",{class:"display"},"Your progress")));
 
   const pc = el("section",{class:"card"});
-  pc.appendChild(el("h2",{class:"cardh"},"Accuracy over time"));
+  pc.appendChild(el("h2",{class:"cardh"},"Correct answers over time"));
   pc.appendChild(field("Period", periodSelector(state.ui.progPeriod, (id)=>{ state.ui.progPeriod=id; renderApp(); })));
   pc.appendChild(el("div",{class:"herostats"},
-    stat(acc+"%", "accuracy this period"),
     stat(agg.correct, "correct this period"),
     stat(agg.seen, "answered this period"),
     stat(prog.streak||0, "day streak")));
@@ -2797,16 +2836,17 @@ function renderProgress(main){
 
   const buckets = {};
   Object.entries(prog.stats).forEach(([cat,c])=>{ const b=catBucket(cat); const o=buckets[b]||(buckets[b]={seen:0,correct:0}); o.seen+=c.seen||0; o.correct+=c.correct||0; });
-  const cats = Object.entries(buckets).sort((a,b)=> (a[1].correct/a[1].seen) - (b[1].correct/b[1].seen));
+  const cats = Object.entries(buckets).sort((a,b)=> b[1].correct - a[1].correct);
+  const maxC = Math.max(1, ...cats.map(([,c])=>c.correct));
   const card = el("section",{class:"card"});
-  card.appendChild(el("h2",{class:"cardh"},"Accuracy by category (all time)"));
+  card.appendChild(el("h2",{class:"cardh"},"Correct by category (all time)"));
   if(!cats.length) card.appendChild(el("p",{class:"muted"},"No data yet. Complete a drill to populate this."));
   cats.forEach(([label,c])=>{
-    const p = Math.round(100*c.correct/c.seen);
+    const w = Math.round(100*c.correct/maxC);
     card.appendChild(el("div",{class:"bar"},
       el("div",{class:"barlabel"}, label),
-      el("div",{class:"bartrack"}, el("div",{class:"barfill", style:`width:${p}%`})),
-      el("div",{class:"barval"}, `${p}% · ${c.seen}`)));
+      el("div",{class:"bartrack"}, el("div",{class:"barfill", style:`width:${Math.max(2,w)}%`})),
+      el("div",{class:"barval"}, `${c.correct} / ${c.seen}`)));
   });
   main.appendChild(card);
 }
@@ -2831,6 +2871,14 @@ function setAnonymous(val){
   state._lbGlobal = undefined;                     // force the global board to refetch
   renderApp();
 }
+function setDisplayName(name){
+  name = (name||"").trim(); if(!name || name===state.user.displayName) return;
+  state.user.displayName = name;
+  DB.setProfile(state.user.uid, state.user);      // local + cloud profile
+  pushScores(DB.progress(state.user.uid));         // update name shown on leaderboards
+  state._lbGlobal = undefined; state._lbScores = {};
+  renderApp();
+}
 function rankTable(card, rows, masking){
   rows.sort((a,b)=> b.pts-a.pts);
   const t = el("table",{class:"roster"});
@@ -2852,6 +2900,11 @@ function renderLeaderboard(main){
 
   const card = el("section",{class:"card"});
   card.appendChild(el("h2",{class:"cardh"},"Correct answers"));
+
+  const nameInput = el("input",{class:"text", value:me.displayName||"", style:"max-width:240px"});
+  nameInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); setDisplayName(nameInput.value); } });
+  card.appendChild(field("Display name", el("div",{class:"name-edit"}, nameInput,
+    el("button",{class:"ghost small", onclick:()=>setDisplayName(nameInput.value)}, "Save"))));
 
   const scopeRow = el("div",{class:"chooser"});
   [["class","My class"],["global","Global"]].forEach(([id,label])=>
@@ -2943,16 +2996,33 @@ function renderTeacher(main){
     el("button",{class:"primary", onclick:()=>{ if(!cname.value.trim())return; const c={id:uid4(),name:cname.value.trim(),teacherId:state.user.uid,joinCode:uid4().toUpperCase(),students:[]}; const arr=DB.classes(); arr.push(c); DB.setClasses(arr); renderApp(); }}, "Create class")));
   if(!classes.length) cc.appendChild(el("p",{class:"muted small"},"No classes yet."));
   classes.forEach(c=>{
-    const count = c.enrolled ? c.enrolled.length : (c.students ? c.students.length : 0);
-    cc.appendChild(el("div",{class:"classrow"},
+    const enrolled = (c.enrolled||[]).filter(s=>!(c.removed||[]).includes(s.uid));
+    const count = enrolled.length || (c.students ? c.students.length : 0);
+    const head = el("div",{class:"classrow"},
       el("div",{}, el("b",{},c.name), el("span",{class:"muted small"}, `  join code: `), el("code",{class:"code"}, c.joinCode)),
-      el("span",{class:"muted small"}, `${count} student${count===1?"":"s"}`)));
+      el("span",{class:"muted small"}, `${count} student${count===1?"":"s"}`));
+    if(enrolled.length){
+      const det = el("details",{class:"classroster"});
+      det.appendChild(el("summary",{}, head));
+      const list = el("div",{class:"rosterlist"});
+      enrolled.forEach(s=>{
+        list.appendChild(el("div",{class:"rosteritem"},
+          el("span",{}, s.displayName||s.uid),
+          el("button",{class:"danger small ghost", onclick:()=>removeStudent(c.id, s.uid)}, "Remove")));
+      });
+      det.appendChild(list);
+      cc.appendChild(det);
+    } else {
+      cc.appendChild(head);
+    }
   });
   main.appendChild(cc);
 
-  // create assignment
-  const ca = el("section",{class:"card"});
-  ca.appendChild(el("h2",{class:"cardh"},"Assignments"));
+  // create / edit assignment
+  const ca = el("section",{class:"card"}); ca.id="asgCard";
+  const editing = !!asgChoice.editId && assignments.some(a=>a.id===asgChoice.editId);
+  if(!editing) asgChoice.editId = null;
+  ca.appendChild(el("h2",{class:"cardh"}, editing? "Edit assignment" : "Assignments"));
   if(!classes.length){ ca.appendChild(el("p",{class:"muted small"},"Create a class first.")); }
   else {
     if(!classes.find(c=>c.id===asgChoice.classId)) asgChoice.classId = classes[0].id;
@@ -2990,15 +3060,22 @@ function renderTeacher(main){
     }
     ca.appendChild(field("Assign to", af));
 
-    ca.appendChild(el("button",{class:"primary", style:"margin-top:20px", onclick:()=>{
+    const actions = el("div",{class:"form-actions"});
+    actions.appendChild(el("button",{class:"primary", onclick:()=>{
       const t = title.value.trim(); if(!t) return;
-      const a={ id:uid4(), title:t, classId:classSel.value, module:asgChoice.module,
+      const data = { title:t, classId:classSel.value, module:asgChoice.module,
         scope: JSON.parse(JSON.stringify(asgChoice.scope[asgChoice.module]||DEFAULT_SCOPE[asgChoice.module]||{})),
-        count: parseInt(count.value,10)||15, createdBy: state.user.uid, created: now(),
+        count: parseInt(count.value,10)||15,
         due: dueInp.value ? new Date(dueInp.value+"T23:59:59").getTime() : null,
         assignedTo: (asgChoice.assignedTo||[]).slice() };
-      const arr=DB.assignments(); arr.push(a); DB.setAssignments(arr); asgChoice.title=""; asgChoice.due=""; asgChoice.assignedTo=[]; title.value=""; renderApp();
-    }}, "Create assignment"));
+      const arr=DB.assignments();
+      if(editing){ const i=arr.findIndex(x=>x.id===asgChoice.editId); if(i>=0) arr[i]=Object.assign({}, arr[i], data); }
+      else arr.push(Object.assign({ id:uid4(), createdBy:state.user.uid, created:now() }, data));
+      DB.setAssignments(arr);
+      asgChoice.editId=null; asgChoice.title=""; asgChoice.due=""; asgChoice.assignedTo=[]; title.value=""; renderApp();
+    }}, editing? "Save changes" : "Create assignment"));
+    if(editing) actions.appendChild(el("button",{class:"ghost", onclick:()=>{ asgChoice.editId=null; asgChoice.title=""; asgChoice.due=""; asgChoice.assignedTo=[]; renderApp(); }}, "Cancel"));
+    ca.appendChild(actions);
   }
   if(assignments.length) ca.appendChild(el("div",{class:"asg-listhead"}, "Active assignments"));
   assignments.forEach(a=>{
@@ -3018,6 +3095,32 @@ function renderTeacher(main){
   });
   main.appendChild(ca);
 
+  // class-wide misconceptions: which form categories are missed most
+  const wc = el("section",{class:"card"});
+  wc.appendChild(el("h2",{class:"cardh"},"Class weak spots"));
+  const weak = classWeakSpots(attempts);
+  if(weak.length){
+    wc.appendChild(el("p",{class:"muted small", style:"margin:0 0 14px"}, "Form categories the class misses most, pooled across every submission."));
+    weak.slice(0,8).forEach(w=>{
+      const pctMiss = Math.round(100*w.miss);
+      wc.appendChild(el("div",{class:"bar"},
+        el("div",{class:"barlabel"}, catLabel(w.cat)),
+        el("div",{class:"bartrack"}, el("div",{class:"barfill miss", style:`width:${Math.max(3,pctMiss)}%`})),
+        el("div",{class:"barval"}, `${pctMiss}% missed · ${w.seen-w.correct}/${w.seen}`)));
+    });
+  } else {
+    const rows = assignments.map(a=>{ const subs=attempts.filter(t=>t.assignmentId===a.id); const avg=subs.length?Math.round(subs.reduce((s,t)=>s+t.pct,0)/subs.length):null; return {a,avg,n:subs.length}; })
+      .filter(r=>r.avg!=null).sort((x,y)=>x.avg-y.avg);
+    if(rows.length){
+      wc.appendChild(el("p",{class:"muted small", style:"margin:0 0 14px"}, "Assignments with the lowest class average. Per-form detail appears as students complete newer assignments."));
+      rows.slice(0,6).forEach(r=> wc.appendChild(el("div",{class:"bar"},
+        el("div",{class:"barlabel"}, r.a.title),
+        el("div",{class:"bartrack"}, el("div",{class:"barfill miss", style:`width:${Math.max(3,100-r.avg)}%`})),
+        el("div",{class:"barval"}, `${r.avg}% avg · ${r.n}`))));
+    } else wc.appendChild(el("p",{class:"muted small"}, "No submissions yet — weak spots appear once students complete assignments."));
+  }
+  main.appendChild(wc);
+
   // roster accuracy (overall, across all assignments)
   const rc = el("section",{class:"card"});
   rc.appendChild(el("h2",{class:"cardh"},"Roster — overall accuracy"));
@@ -3027,9 +3130,27 @@ function renderTeacher(main){
   const roster = rosterRows(classes, attempts);
   if(!roster.length) rc.appendChild(el("p",{class:"muted small"}, Cloud.active? "No students enrolled or no attempts yet." : "Local mode shows only your own attempts. Connect Firebase for a full roster."));
   else {
+    const titleById={}, asgDue={}; assignments.forEach(a=>{ titleById[a.id]=a.title; asgDue[a.id]=a.due; });
     const t = el("table",{class:"roster"});
     t.appendChild(el("tr",{}, el("th",{},"Student"), el("th",{},"Attempts"), el("th",{},"Avg accuracy")));
-    roster.forEach(r=> t.appendChild(el("tr",{}, el("td",{}, r.name), el("td",{}, String(r.n)), el("td",{}, r.avg==null? "—" : r.avg+"%"))));
+    roster.forEach(r=>{
+      const detail = el("tr",{class:"roster-detail", style:"display:none"});
+      const cell = el("td",{colspan:"3"});
+      if(r.list.length){
+        const inner = el("div",{class:"histlist"});
+        r.list.forEach(at=>{
+          const late = at.when && asgDue[at.assignmentId] && at.when>asgDue[at.assignmentId];
+          inner.appendChild(el("div",{class:"histrow"},
+            el("span",{}, titleById[at.assignmentId]||"Assignment"),
+            el("span",{class:"muted small"}, `${at.pct}% · ${fmtWhen(at.when)}${late?" · late":""}`)));
+        });
+        cell.appendChild(inner);
+      } else cell.appendChild(el("span",{class:"muted small"},"No attempts yet."));
+      detail.appendChild(cell);
+      const row = el("tr",{class:"roster-row"+(r.n?" has-history":""), onclick:()=>{ if(r.n) detail.style.display = (detail.style.display==="none"?"table-row":"none"); }},
+        el("td",{}, r.n? r.name+" ▸" : r.name), el("td",{}, String(r.n)), el("td",{}, r.avg==null? "—" : r.avg+"%"));
+      t.appendChild(row); t.appendChild(detail);
+    });
     rc.appendChild(t);
   }
   main.appendChild(rc);
@@ -3085,6 +3206,8 @@ function assignmentBreakdown(a, cls, attempts){
     body.appendChild(t);
   }
   body.appendChild(el("div",{class:"asg-actions"},
+    el("button",{class:"ghost small", onclick:()=>editAssignment(a)}, "Edit"),
+    el("button",{class:"ghost small", onclick:()=>duplicateAssignment(a)}, "Duplicate"),
     el("button",{class:"danger small", onclick:()=>deleteAssignment(a)}, "Delete assignment")));
   return body;
 }
@@ -3106,11 +3229,27 @@ function scopeSummary(module, scope){
   }
   return labels.join(", ");
 }
+function catLabel(cat){
+  const [a,b]=String(cat).split(":");
+  const base={decline:"Nouns",conjugate:"Verbs",adj:"Adjectives",comparison:"Comparison",adverb:"Adverbs",pronoun:"Pronouns",participle:"Participles",infinitive:"Infinitives",gerund:"Gerunds & gerundives",parse:"Parsing",translate:"Translation"}[a]||a;
+  if(!b) return base;
+  const spec={"1":"1st decl.","2":"2nd decl.","3":"3rd decl.","4":"4th decl.","5":"5th decl.","irr":"irregular","3io":"3rd-io conj.","present":"present","perfect":"perfect","future":"future","gerund":"gerund","gerundive":"gerundive","adj1":"1st/2nd decl.","adj3":"3rd decl.","nominal":"nominal","verb":"verbal"}[b]||b;
+  return base+" · "+spec;
+}
+function classWeakSpots(attempts){
+  const agg={};
+  (attempts||[]).forEach(t=>{ const cats=t.cats||{}; for(const k in cats){ const e=agg[k]||(agg[k]={seen:0,correct:0}); e.seen+=cats[k].seen||0; e.correct+=cats[k].correct||0; } });
+  return Object.entries(agg).filter(([,c])=>c.seen>=3)
+    .map(([cat,c])=>({cat, seen:c.seen, correct:c.correct, miss:1-(c.correct/c.seen)}))
+    .filter(w=>w.miss>0).sort((a,b)=> b.miss-a.miss || b.seen-a.seen);
+}
 function rosterRows(classes, attempts){
-  const byId = {}; // id -> {name, list:[]}
-  classes.forEach(c=> (c.enrolled||[]).forEach(s=>{ byId[s.uid] = byId[s.uid] || { name:s.displayName||s.uid, list:[] }; }));
-  attempts.forEach(t=>{ const id=t.studentUid||t.studentName; byId[id] = byId[id] || { name:t.studentName||id, list:[] }; byId[id].list.push(t); });
-  return Object.values(byId).map(s=>({ name:s.name, n:s.list.length, avg: s.list.length? Math.round(s.list.reduce((a,t)=>a+t.pct,0)/s.list.length) : null }));
+  const byId = {}; // id -> {uid, name, list:[]}
+  classes.forEach(c=> (c.enrolled||[]).filter(s=>!(c.removed||[]).includes(s.uid)).forEach(s=>{ byId[s.uid] = byId[s.uid] || { uid:s.uid, name:s.displayName||s.uid, list:[] }; }));
+  attempts.forEach(t=>{ const id=t.studentUid||t.studentName; byId[id] = byId[id] || { uid:id, name:t.studentName||id, list:[] }; byId[id].list.push(t); });
+  return Object.values(byId).map(s=>({ uid:s.uid, name:s.name, n:s.list.length,
+    list: s.list.slice().sort((a,b)=>(b.when||0)-(a.when||0)),
+    avg: s.list.length? Math.round(s.list.reduce((a,t)=>a+t.pct,0)/s.list.length) : null }));
 }
 
 function renderStudent(main){
@@ -3118,7 +3257,8 @@ function renderStudent(main){
     el("p",{class:"eyebrow"},"Discipulus"),
     el("h1",{class:"display"},"Your classes")));
   const classes = DB.classes(); const me = state.user;
-  const joined = classes.filter(c=> (me.classIds||[]).includes(c.id));
+  const joined = classes.filter(c=> (me.classIds||[]).includes(c.id) && !(c.removed||[]).includes(me.uid));
+  const joinedIds = joined.map(c=>c.id);
 
   const jc = el("section",{class:"card"});
   jc.appendChild(el("h2",{class:"cardh"},"Join a class"));
@@ -3143,7 +3283,7 @@ function renderStudent(main){
   const ac = el("section",{class:"card"});
   ac.appendChild(el("h2",{class:"cardh"},"Assignments"));
   const mine = DB.assignments()
-    .filter(a=> (me.classIds||[]).includes(a.classId) && (!a.assignedTo || !a.assignedTo.length || a.assignedTo.includes(me.uid)))
+    .filter(a=> joinedIds.includes(a.classId) && (!a.assignedTo || !a.assignedTo.length || a.assignedTo.includes(me.uid)))
     .sort((x,y)=> (x.due||Infinity) - (y.due||Infinity));
   const attempts = DB.attempts();
   if(!mine.length) ac.appendChild(el("p",{class:"muted small"}, joined.length?"No assignments yet.":"Join a class to see assignments."));
@@ -3165,7 +3305,7 @@ function alertInline(parent,msg){ parent.appendChild(el("div",{class:"vline warn
 
 function startAssignment(a){
   state.session = { module:a.module, scope:a.scope, mode:"quiz", n:0, correct:0, target:a.count, done:false, assignmentId:a.id, onDone:(pct)=>{
-    const arr=DB.attempts(); arr.push({ id:uid4(), assignmentId:a.id, studentUid:state.user.uid, studentName:state.user.displayName, pct, when:now() }); DB.setAttempts(arr);
+    const arr=DB.attempts(); arr.push({ id:uid4(), assignmentId:a.id, studentUid:state.user.uid, studentName:state.user.displayName, pct, when:now(), cats:(state.session&&state.session.catHits)||{} }); DB.setAttempts(arr);
   }, current:null };
   // wrap end to record attempt
   nextQuestion(); setView("drill");
@@ -3196,7 +3336,7 @@ function boot(){
 }
 function ensureLocalUserForced(){
   let p = DB.profile("local");
-  if(!p){ p = { uid:"local", displayName:"Student", role:"student", classIds:[] }; kv.setJSON("lvdvs:profile:local", p); }
+  if(!p){ p = { uid:"local", displayName:"Student", role:"student", classIds:[], anon:true }; kv.setJSON("lvdvs:profile:local", p); }
   state.user = p;
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot); else boot();
