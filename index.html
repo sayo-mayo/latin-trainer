@@ -251,6 +251,9 @@ table.roster tr:hover td{background:color-mix(in srgb,var(--surface-2) 50%, tran
 .anon-toggle{display:flex; align-items:center; gap:9px; margin:12px 0 2px; cursor:pointer; color:var(--muted); font-size:13px}
 .anon-toggle input{width:16px; height:16px; accent-color:var(--accent); cursor:pointer}
 .name-edit{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.lbhead{display:flex; align-items:baseline; gap:10px; margin:20px 0 12px}
+.readonly{padding:11px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); color:var(--muted); max-width:260px; font-size:14px}
+.rolebadge{display:inline-block; padding:6px 13px; border-radius:999px; background:var(--accent-soft); color:var(--accent-ink); font-size:13px; font-weight:600}
 button.ghost.small{padding:8px 14px; font-size:13px}
 .asg-listhead{margin:26px 0 14px; padding-top:18px; border-top:1px solid var(--line); font-family:var(--display); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
 /* teacher: per-assignment drill-down */
@@ -2182,6 +2185,11 @@ function genPronoun(sel){
 }
 
 /* ---- parsing: reverse index per lemma (form → set of analyses) ---- */
+function sameAnalysis(x,y){ return x.cas===y.cas && x.num===y.num && x.g===y.g && x.person===y.person && x.tense===y.tense && x.mood===y.mood && x.voice===y.voice; }
+function indexForm(idx, raw, a){
+  if(raw==null) return;
+  String(raw).split("/").forEach(v=>{ v=v.trim(); if(!v) return; const arr=idx[v]||(idx[v]=[]); if(!arr.some(x=>sameAnalysis(x,a))) arr.push(a); });
+}
 function genParse(sel){
   const base = sel.parseModule || "decline";
   if(base === "conjugate"){
@@ -2193,7 +2201,7 @@ function genParse(sel){
     for(const mood of moods) for(const tense of tenses) for(const voice of (e.deponent?["active"]:voices))
       for(const person of ["1","2","3"]) for(const number of ["sg","pl"]){
         const f = verbForm(v,{tense,mood,voice,person,number}); if(!f) continue;
-        (idx[f] = idx[f]||[]).push({person,number,tense,mood,voice});
+        indexForm(idx, f, {person,number,tense,mood,voice});
       }
     const forms = Object.keys(idx); const form = rand(forms);
     return { kind:"parseVerb", category:"parse:verb", itemKey:`parsev:${e.key}:${form}`,
@@ -2207,15 +2215,15 @@ function genParse(sel){
   if(sub==="decline"){
     const keys = pickScopeKeys("decline", sel); const e = nounEntry(rand(keys)); lemma=e;
     const d = N.declineNoun(e);
-    for(const num of N.NUMS) for(const cas of N.CASES){ const f=d[num][cas]; (idx[f]=idx[f]||[]).push({cas,num}); }
+    for(const num of N.NUMS) for(const cas of N.CASES){ indexForm(idx, d[num][cas], {cas,num}); }
   } else if(sub==="adjadv"){
     const keys = pickScopeKeys("adjadv", sel); const e=adjEntry(rand(keys)); lemma=e; hasGender=true;
     const d = e.type==="adj1"?N.declineAdj1(e.m,e.f,e.n):N.declineAdj3(e.nom,e.stem);
-    for(const g of ["m","f","n"]) for(const num of N.NUMS) for(const cas of N.CASES){ const f=d[g][num][cas]; (idx[f]=idx[f]||[]).push({g,cas,num}); }
+    for(const g of ["m","f","n"]) for(const num of N.NUMS) for(const cas of N.CASES){ indexForm(idx, d[g][num][cas], {g,cas,num}); }
   } else { // pronoun
     const keys = pickScopeKeys("pronoun", sel); const key=rand(keys); const p=N.declinePronoun(key); lemma={key, gloss:p.gloss}; hasGender=!!p.g;
-    if(p.g){ for(const g of ["m","f","n"]) for(const num of N.NUMS) for(const cas of N.CASES){ const f=p.forms[g][num][cas]; if(f)(idx[f]=idx[f]||[]).push({g,cas,num}); } }
-    else { for(const num of N.NUMS){ if(!p.forms[num]) continue; for(const cas of N.CASES){ const f=p.forms[num][cas]; if(f)(idx[f]=idx[f]||[]).push({cas,num}); } } }
+    if(p.g){ for(const g of ["m","f","n"]) for(const num of N.NUMS) for(const cas of N.CASES){ indexForm(idx, p.forms[g][num][cas], {g,cas,num}); } }
+    else { for(const num of N.NUMS){ if(!p.forms[num]) continue; for(const cas of N.CASES){ indexForm(idx, p.forms[num][cas], {cas,num}); } } }
   }
   const forms = Object.keys(idx); const form = rand(forms);
   return { kind:"parseNominal", category:"parse:nominal", itemKey:`parsen:${lemma.key}:${form}`,
@@ -2342,7 +2350,7 @@ function setView(v){ state.view = v; renderApp(); }
 
 function topbar(){
   const nav = el("nav",{class:"nav"});
-  [["home","Drill"],["progress","Progress"],["leaderboard","Leaderboard"],["class","Class"]].forEach(([v,label])=>{
+  [["home","Drill"],["progress","Progress"],["leaderboard","Leaderboard"],["class","Class"],["profile","Profile"]].forEach(([v,label])=>{
     nav.appendChild(el("button",{class:"navbtn"+(state.view===v?" active":""), onclick:()=>setView(v)}, label));
   });
   const acct = el("div",{class:"acct"},
@@ -2357,6 +2365,7 @@ function topbar(){
     nav, acct);
 }
 function toggleTheme(){ state.settings.theme = state.settings.theme==="dark"?"light":"dark"; document.documentElement.setAttribute("data-theme", state.settings.theme); persistSettings(); renderApp(); }
+function setTheme(t){ if(state.settings.theme===t) return; state.settings.theme=t; document.documentElement.setAttribute("data-theme", t); persistSettings(); renderApp(); }
 function toggleRole(){ state.user.role = state.user.role==="teacher"?"student":"teacher"; DB.setProfile(state.user.uid, state.user); renderApp(); }
 function persistSettings(){ kv.setJSON("lvdvs:settings", state.settings); }
 
@@ -2371,6 +2380,7 @@ function renderApp(){
   else if(state.view==="progress") renderProgress(main);
   else if(state.view==="leaderboard") renderLeaderboard(main);
   else if(state.view==="class") renderClass(main);
+  else if(state.view==="profile") renderProfile(main);
 }
 
 /* ---------- auth (Firebase mode) ---------- */
@@ -2899,24 +2909,11 @@ function renderLeaderboard(main){
     el("h1",{class:"display"},"Leaderboard")));
 
   const card = el("section",{class:"card"});
-  card.appendChild(el("h2",{class:"cardh"},"Correct answers"));
-
-  const nameInput = el("input",{class:"text", value:me.displayName||"", style:"max-width:240px"});
-  nameInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); setDisplayName(nameInput.value); } });
-  card.appendChild(field("Display name", el("div",{class:"name-edit"}, nameInput,
-    el("button",{class:"ghost small", onclick:()=>setDisplayName(nameInput.value)}, "Save"))));
 
   const scopeRow = el("div",{class:"chooser"});
   [["class","My class"],["global","Global"]].forEach(([id,label])=>
     scopeRow.appendChild(el("button",{class:"choice small"+(((state.ui.lbScope||"class")===id)?" sel":""), onclick:()=>{ state.ui.lbScope=id; renderApp(); }}, label)));
   card.appendChild(field("Board", scopeRow));
-
-  const anonLab = el("label",{class:"anon-toggle"});
-  const acb = el("input",{type:"checkbox"}); acb.checked=!!me.anon;
-  acb.addEventListener("change", ()=> setAnonymous(acb.checked));
-  anonLab.appendChild(acb);
-  anonLab.appendChild(el("span",{}, "Appear anonymously on the global board"));
-  card.appendChild(anonLab);
 
   const scope = state.ui.lbScope || "class";
   const days = periodDays(state.ui.lbPeriod);
@@ -2951,6 +2948,7 @@ function renderLeaderboard(main){
         card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ delete state._lbScores[cid]; renderApp(); }}, "Refresh"));
       }
     } else card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts for class comparison."));
+    card.appendChild(lbCaption());
     rankTable(card, rows, false);
   } else {
     card.appendChild(field("Period", periodSelector(state.ui.lbPeriod, (id)=>{ state.ui.lbPeriod=id; renderApp(); })));
@@ -2963,9 +2961,77 @@ function renderLeaderboard(main){
         card.appendChild(el("button",{class:"ghost", style:"margin-bottom:10px", onclick:()=>{ state._lbGlobal=undefined; renderApp(); }}, "Refresh"));
       }
     } else card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts to compete globally."));
+    card.appendChild(lbCaption());
     rankTable(card, rows, true);
   }
   main.appendChild(card);
+}
+function lbCaption(){
+  const phrase = {day:"today",week:"in the last week",month:"in the last month",year:"in the last year",all:"all time"}[state.ui.lbPeriod||"week"]||"";
+  return el("div",{class:"lbhead"},
+    el("h2",{class:"cardh", style:"margin:0"},"Correct answers"),
+    phrase? el("span",{class:"muted small"}, phrase) : null);
+}
+
+function renderProfile(main){
+  const me = state.user;
+  main.appendChild(el("section",{class:"hero compact"},
+    el("p",{class:"eyebrow"},"Persōna"),
+    el("h1",{class:"display"},"Profile")));
+
+  // --- Account ---
+  const ac = el("section",{class:"card"});
+  ac.appendChild(el("h2",{class:"cardh"},"Account"));
+  const nameInput = el("input",{class:"text", value:me.displayName||"", style:"max-width:260px"});
+  nameInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); setDisplayName(nameInput.value); } });
+  ac.appendChild(field("Display name", el("div",{class:"name-edit"}, nameInput,
+    el("button",{class:"ghost small", onclick:()=>setDisplayName(nameInput.value)}, "Save"))));
+  if(me.email) ac.appendChild(field("Email", el("div",{class:"readonly"}, me.email)));
+  const roleRow = el("div",{class:"name-edit"},
+    el("span",{class:"rolebadge"}, me.role==="teacher"?"Teacher":"Student"));
+  if(!Cloud.active) roleRow.appendChild(el("button",{class:"ghost small", onclick:toggleRole}, "Switch (demo)"));
+  ac.appendChild(field("Account type", roleRow));
+  main.appendChild(ac);
+
+  // --- Appearance ---
+  const apc = el("section",{class:"card"});
+  apc.appendChild(el("h2",{class:"cardh"},"Appearance"));
+  const themeRow = el("div",{class:"chooser"});
+  [["light","Light"],["dark","Dark"]].forEach(([id,label])=>
+    themeRow.appendChild(el("button",{class:"choice small"+((state.settings.theme||"light")===id?" sel":""), onclick:()=>setTheme(id)}, label)));
+  apc.appendChild(field("Theme", themeRow));
+  main.appendChild(apc);
+
+  // --- Privacy ---
+  const pc = el("section",{class:"card"});
+  pc.appendChild(el("h2",{class:"cardh"},"Privacy"));
+  const anonLab = el("label",{class:"anon-toggle"});
+  const acb = el("input",{type:"checkbox"}); acb.checked=!!me.anon;
+  acb.addEventListener("change", ()=> setAnonymous(acb.checked));
+  anonLab.appendChild(acb);
+  anonLab.appendChild(el("span",{}, "Appear anonymously on the global leaderboard"));
+  pc.appendChild(anonLab);
+  pc.appendChild(el("p",{class:"muted small", style:"margin:8px 0 0"}, "Your class leaderboard always shows your name to classmates and your teacher."));
+  main.appendChild(pc);
+
+  // --- Security (cloud accounts only) ---
+  if(Cloud.active){
+    const sc = el("section",{class:"card"});
+    sc.appendChild(el("h2",{class:"cardh"},"Security"));
+    const note = el("div",{class:"authnote", style:"display:none; margin-bottom:12px"});
+    sc.appendChild(note);
+    sc.appendChild(field("Password", el("div",{class:"name-edit"},
+      el("button",{class:"ghost small", onclick:()=>{
+        note.style.display="block"; note.className="authnote"; note.textContent="Sending reset link…";
+        Cloud.resetPassword(me.email)
+          .then(()=>{ note.className="authnote ok"; note.textContent="Password reset link sent to "+me.email+". Check your inbox (and spam)."; })
+          .catch((e)=>{ note.className="authnote err"; note.textContent=(e&&e.message)? e.message.replace(/^Firebase:\s*/,"") : "Could not send reset link."; });
+      }}, "Send reset link"),
+      el("span",{class:"muted small"}, "We email a secure link to set a new password."))));
+    sc.appendChild(field("Session", el("div",{class:"name-edit"},
+      el("button",{class:"danger small ghost", onclick:()=>Cloud.signOut()}, "Sign out"))));
+    main.appendChild(sc);
+  }
 }
 
 /* ---------- class / dashboard (renders from DB; identical under Firebase) ---------- */
