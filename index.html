@@ -7,7 +7,14 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Latin%20Trainer%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22tile%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231A8268%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230B5140%22%2F%3E%3C%2FlinearGradient%3E%3CclipPath%20id%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20rx%3D%2213%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%3Cg%20clip-path%3D%22url%28%23round%29%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20fill%3D%22url%28%23tile%29%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2224%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.06%22%2F%3E%3Ctext%20x%3D%2232%22%20y%3D%2246%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2C%27Times%20New%20Roman%27%2Cserif%22%20font-weight%3D%22700%22%20font-size%3D%2242%22%20fill%3D%22%23F4F1EA%22%3EL%3C%2Ftext%3E%3Crect%20x%3D%2222%22%20y%3D%2250.5%22%20width%3D%2220%22%20height%3D%221.6%22%20rx%3D%220.8%22%20fill%3D%22%23D6A24E%22%20opacity%3D%220.9%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20rx%3D%2213%22%20fill%3D%22none%22%20stroke%3D%22%23000000%22%20stroke-opacity%3D%220.10%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com">
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js">
+<link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{
   /* warm scholar's paper, deep verdigris accent, brass secondary */
@@ -1527,16 +1534,36 @@ const Cloud = {
     });
   },
   async start(onUser){
+    // optimistic paint: if this device has a cached session, render it immediately
+    // and let the SDK + auth + hydration catch up in the background.
+    const lastUid = kv.getJSON("lvdvs:lastUid", null);
+    const cached = lastUid ? DB.profile(lastUid) : null;
+    if(cached){ state.user = cached; this.optimistic = true; onUser(cached); }
     this.fb = await this.waitForSDK();
     this.active = true;
     const { auth, api } = this.fb;
     api.onAuthStateChanged(auth, async (user)=>{
-      if(!user){ state.user=null; onUser(null); return; }
+      if(!user){
+        this.authed = false;
+        this.pending = []; this.syncFailed = false; updateSyncBanner();
+        kv.setJSON("lvdvs:lastUid", null);
+        this.optimistic = false;
+        state.user = null; onUser(null); return;
+      }
+      const matchesCache = this.optimistic && state.user && state.user.uid === user.uid;
+      this.optimistic = false;
       const profile = await this.loadOrCreateProfile(user);
       kv.setJSON("lvdvs:profile:"+profile.uid, profile);
+      kv.setJSON("lvdvs:lastUid", profile.uid);
       state.user = profile;
-      await this.hydrate(profile);
-      onUser(profile);
+      this.authed = true;
+      if(!matchesCache) onUser(profile);   // paint now; hydration follows
+      this.retry();                         // flush writes buffered before auth confirmed
+      this.hydrate(profile).then(()=>{
+        const midDrill = state.view==="drill" && state.session && !state.session.done;
+        const midRun = state.view==="speed" && state._speedRun && !state._speedRun.done;
+        if(state.user && state.user.uid===profile.uid && !midDrill && !midRun) renderApp();
+      });
     });
   },
   async loadOrCreateProfile(user){
@@ -1555,43 +1582,52 @@ const Cloud = {
   },
   async hydrate(profile){
     const { db, api } = this.fb;
-    try{ const ps=await api.getDoc(api.doc(db,"progress",profile.uid)); if(ps&&ps.exists&&ps.exists()) kv.setJSON("lvdvs:progress:"+profile.uid, ps.data()); }catch(e){}
+    // progress runs alongside the class/assignment/attempt chain
+    const progressP = api.getDoc(api.doc(db,"progress",profile.uid))
+      .then(ps=>{ if(ps&&ps.exists&&ps.exists()) kv.setJSON("lvdvs:progress:"+profile.uid, ps.data()); })
+      .catch(()=>{});
     let classes=[];
     try{
       if(profile.role==="teacher"){
         const qs=await api.getDocs(api.query(api.collection(db,"classes"), api.where("teacherId","==",profile.uid)));
         qs.forEach(d=>classes.push(d.data()));
-        for(const c of classes){
+        await Promise.all(classes.map(async c=>{
           try{ const us=await api.getDocs(api.query(api.collection(db,"users"), api.where("classIds","array-contains",c.id)));
                c.enrolled=[]; us.forEach(u=>{ const d=u.data(); c.enrolled.push({uid:u.id, displayName:d.displayName||u.id}); });
                c.enrolled = c.enrolled.filter(s=>!(c.removed||[]).includes(s.uid)); }catch(e){ c.enrolled=[]; }
-        }
+        }));
       } else {
-        for(const cid of (profile.classIds||[])){ const cs=await api.getDoc(api.doc(db,"classes",cid)); if(cs&&cs.exists&&cs.exists()){ const cd=cs.data(); if(!(cd.removed||[]).includes(profile.uid)) classes.push(cd); } }
+        const snaps = await Promise.all((profile.classIds||[]).map(cid=> api.getDoc(api.doc(db,"classes",cid)).catch(()=>null)));
+        snaps.forEach(cs=>{ if(cs&&cs.exists&&cs.exists()){ const cd=cs.data(); if(!(cd.removed||[]).includes(profile.uid)) classes.push(cd); } });
       }
     }catch(e){}
     kv.setJSON("lvdvs:classes", classes);
     let assignments=[];
     try{
       const seen = new Set();
-      const add = qs => qs.forEach(d=>{ const a=d.data(); const id=a.id||d.id; if(!seen.has(id)){ seen.add(id); assignments.push(a); } });
-      for(const c of classes){
-        if(profile.role==="teacher"){
-          add(await api.getDocs(api.query(api.collection(db,"assignments"), api.where("classId","==",c.id))));
-        } else {
-          // two rule-provable queries: whole-class assignments, then ones targeted at me
-          add(await api.getDocs(api.query(api.collection(db,"assignments"), api.where("classId","==",c.id), api.where("forAll","==",true))));
-          add(await api.getDocs(api.query(api.collection(db,"assignments"), api.where("classId","==",c.id), api.where("assignedTo","array-contains",profile.uid))));
-        }
-      }
+      const add = qs => qs && qs.forEach(d=>{ const a=d.data(); const id=a.id||d.id; if(!seen.has(id)){ seen.add(id); assignments.push(a); } });
+      const per = await Promise.all(classes.map(c=>{
+        if(profile.role==="teacher")
+          return api.getDocs(api.query(api.collection(db,"assignments"), api.where("classId","==",c.id))).then(q=>[q]).catch(()=>[]);
+        // two rule-provable queries: whole-class assignments, then ones targeted at me
+        return Promise.all([
+          api.getDocs(api.query(api.collection(db,"assignments"), api.where("classId","==",c.id), api.where("forAll","==",true))).catch(()=>null),
+          api.getDocs(api.query(api.collection(db,"assignments"), api.where("classId","==",c.id), api.where("assignedTo","array-contains",profile.uid))).catch(()=>null)
+        ]);
+      }));
+      per.flat().forEach(add);
     }catch(e){}
     kv.setJSON("lvdvs:assignments", assignments);
     let attempts=[];
     try{
-      if(profile.role==="teacher"){ for(const a of assignments){ const qs=await api.getDocs(api.query(api.collection(db,"attempts"), api.where("assignmentId","==",a.id))); qs.forEach(d=>attempts.push(d.data())); } }
+      if(profile.role==="teacher"){
+        const qss = await Promise.all(assignments.map(a=> api.getDocs(api.query(api.collection(db,"attempts"), api.where("assignmentId","==",a.id))).catch(()=>null)));
+        qss.forEach(qs=>{ if(qs) qs.forEach(d=>attempts.push(d.data())); });
+      }
       else { const qs=await api.getDocs(api.query(api.collection(db,"attempts"), api.where("studentUid","==",profile.uid))); qs.forEach(d=>attempts.push(d.data())); }
     }catch(e){}
     kv.setJSON("lvdvs:attempts", attempts);
+    await progressP;
   },
   async refreshTeacher(){ if(this.active && state.user && state.user.role==="teacher") await this.hydrate(state.user); },
   async findClassByJoinCode(code){
@@ -1611,10 +1647,11 @@ const Cloud = {
     try{ const qs=await api.getDocs(api.collection(db,"scores")); const out=[]; qs.forEach(d=>out.push(d.data())); return out; }
     catch(e){ return []; }
   },
-  pending: [],           // failed writes queued for retry: [kind, payload]
+  pending: [],           // failed/deferred writes queued for retry: [kind, payload]
   syncFailed: false,
+  authed: false,         // true once onAuthStateChanged confirms a user
   push(kind, payload){
-    if(!this.active || !this.fb) return;
+    if(!this.active || !this.fb || !this.authed){ if(FIREBASE_ENABLED) this._buffer(kind, payload); return; }
     const { db, api } = this.fb;
     const ops = [];
     try{
@@ -1628,15 +1665,18 @@ const Cloud = {
     Promise.all(ops).then(()=>this._syncOk()).catch(()=>this._syncFail(kind, payload));
   },
   remove(coll, id){
-    if(!this.active || !this.fb) return;
+    if(!this.active || !this.fb || !this.authed){ if(FIREBASE_ENABLED) this._buffer("__remove", {coll,id}); return; }
     const { db, api } = this.fb;
     try{ Promise.resolve(api.deleteDoc(api.doc(db, coll, id))).then(()=>this._syncOk()).catch(()=>this._syncFail("__remove", {coll,id})); }
     catch(e){ this._syncFail("__remove", {coll,id}); }
   },
-  _syncFail(kind, payload){
+  _buffer(kind, payload){
     // keep only the newest payload per kind (writes are whole-doc, so latest wins)
     this.pending = this.pending.filter(([k,p])=> !(k===kind && (k!=="__remove" || (p.coll===payload.coll && p.id===payload.id))));
     this.pending.push([kind, payload]);
+  },
+  _syncFail(kind, payload){
+    this._buffer(kind, payload);
     this.syncFailed = true;
     updateSyncBanner();
   },
