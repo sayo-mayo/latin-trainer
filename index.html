@@ -374,6 +374,14 @@ table.filltable td.rowlab{font-size:11px; white-space:nowrap; width:62px; paddin
 .speedclock{font-family:var(--serif); font-size:34px; font-variant-numeric:tabular-nums; color:var(--accent-ink); min-width:96px}
 .speederr{font-size:13px; color:var(--muted)}
 .speedsum{margin-bottom:14px}
+.evgroups{display:flex; flex-direction:column; gap:9px; margin:2px 0 16px}
+.evgroup{display:flex; align-items:center; gap:7px; flex-wrap:wrap}
+.evgroup .grouplab{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); min-width:96px}
+.evgroup .choice.small{padding:6px 13px; font-size:12.5px; line-height:1.3; border-radius:999px; box-shadow:none}
+.speedstart{display:flex; align-items:center; gap:14px}
+.pbchip{font-size:13px; color:var(--muted)} .pbchip b{color:var(--accent-ink); font-variant-numeric:tabular-nums}
+.lbspacer{flex:1}
+.lbhead .chooser{margin:0; align-self:center}
 </style>
 </head>
 <body>
@@ -2928,14 +2936,20 @@ function caseKey(){
 
 /* ---------- speed runs (fill a whole table against the clock) ---------- */
 const SPEED_EVENTS = [
-  { id:"noun1", label:"1st declension" }, { id:"noun2", label:"2nd declension" },
-  { id:"noun3", label:"3rd declension" }, { id:"noun4", label:"4th declension" },
-  { id:"noun5", label:"5th declension" },
-  { id:"adj",   label:"Adjectives" },
-  { id:"ppl",   label:"Participles" },
-  { id:"inf",   label:"Infinitives" },
-  { id:"ger",   label:"Gerund & gerundive" }
+  { id:"noun1", label:"1st", full:"1st declension", group:"Nouns" },
+  { id:"noun2", label:"2nd", full:"2nd declension", group:"Nouns" },
+  { id:"noun3", label:"3rd", full:"3rd declension", group:"Nouns" },
+  { id:"noun4", label:"4th", full:"4th declension", group:"Nouns" },
+  { id:"noun5", label:"5th", full:"5th declension", group:"Nouns" },
+  { id:"pplpres", label:"Present", full:"Present participle", group:"Participles" },
+  { id:"pplperf", label:"Perfect", full:"Perfect participle", group:"Participles" },
+  { id:"pplfut",  label:"Future",  full:"Future participle",  group:"Participles" },
+  { id:"adj",  label:"Adjectives",  full:"Adjectives",  group:"Other forms" },
+  { id:"inf",  label:"Infinitives", full:"Infinitives", group:"Other forms" },
+  { id:"ger",  label:"Gerund",      full:"Gerund",      group:"Other forms" },
+  { id:"gerv", label:"Gerundive",   full:"Gerundive",   group:"Other forms" }
 ];
+const SPEED_GROUPS = ["Nouns","Participles","Other forms"];
 function speedGen(ev){
   if(/^noun[1-5]$/.test(ev)){
     const d = +ev.slice(4);
@@ -2953,15 +2967,21 @@ function speedGen(ev){
     return { prompt:`Decline <span class="lat">${adjCitation(e)}</span> <span class="muted">(${e.gloss})</span> — all genders`,
       tables: genderedTables(d, (g,num,cas)=>`adj:${e.key}:${g}:${cas}:${num}`, cat) };
   }
-  if(ev==="ppl"){
-    let e, v, type=null, pf=null, guard=0;
-    do{ e=rand(LEX.verbs); v=N.conjugateVerb(e);
-        const avail=["present","perfect","future"].filter(t=>participleForms(v,t));
-        type=avail.length?rand(avail):null; pf=type?participleForms(v,type):null; guard++; }while(!pf&&guard<60);
-    if(!pf){ e=LEX.verbs.find(x=>!x.irregular); v=N.conjugateVerb(e); type="present"; pf=participleForms(v,"present"); }
+  if(/^ppl(pres|perf|fut)$/.test(ev)){
+    const type={pplpres:"present",pplperf:"perfect",pplfut:"future"}[ev];
+    let e, v, pf=null, guard=0;
+    do{ e=rand(LEX.verbs); v=N.conjugateVerb(e); pf=participleForms(v,type); guard++; }while(!pf&&guard<80);
+    if(!pf){ e=LEX.verbs.find(x=>!x.irregular&&!x.deponent); v=N.conjugateVerb(e); pf=participleForms(v,type); }
     const cat="participle:"+type;
     return { prompt:`Decline the <b>${type} participle</b> of <span class="lat">${e.cite}</span> — all genders`,
       tables: genderedTables(pf.decl, (g,num,cas)=>`ppl:${e.key}:${type}:${g}:${cas}:${num}`, cat) };
+  }
+  if(ev==="gerv"){
+    let e, v, gd=null, guard=0;
+    do{ e=rand(LEX.verbs); v=N.conjugateVerb(e); gd=gerundiveDecl(v); guard++; }while(!gd&&guard<80);
+    if(!gd){ e=LEX.verbs.find(x=>!x.irregular&&!x.deponent); v=N.conjugateVerb(e); gd=gerundiveDecl(v); }
+    return { prompt:`Decline the <b>gerundive</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span> — all genders`,
+      tables: genderedTables(gd.decl, (g,num,cas)=>`gerv:${e.key}:${g}:${cas}:${num}`, "gerund:gerundive") };
   }
   if(ev==="inf"){
     let e, v, all=[], guard=0;
@@ -2973,18 +2993,16 @@ function speedGen(ev){
     return { prompt:`Give every <b>infinitive</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span>`,
       tables:[{ colHeads:["form"], rows }] };
   }
-  // ger: the gerund cases plus the full gerundive of one verb
+  // ger: the four gerund cases of one verb, NVAGDA order without nom/voc
   let e, v, guard=0;
   do{ e=rand(LEX.verbs); v=N.conjugateVerb(e); guard++; }
-  while((!gerundForms(v) || !gerundiveDecl(v)) && guard<80);
-  if(!gerundForms(v) || !gerundiveDecl(v)){ e=LEX.verbs.find(x=>!x.irregular&&!x.deponent); v=N.conjugateVerb(e); }
-  const g=gerundForms(v), gd=gerundiveDecl(v);
+  while(!gerundForms(v) && guard<80);
+  if(!gerundForms(v)){ e=LEX.verbs.find(x=>!x.irregular&&!x.deponent); v=N.conjugateVerb(e); }
+  const g=gerundForms(v);
   const gRows = ["acc","gen","dat","abl"].filter(c=>g[c]).map(c=>({ label:N.CASE_LABEL[c],
     cells:[{ answer:g[c], itemKey:`ger:${e.key}:${c}`, category:"gerund:gerund" }] }));
-  const gvTables = genderedTables(gd.decl, (gg,num,cas)=>`gerv:${e.key}:${gg}:${cas}:${num}`, "gerund:gerundive");
-  gvTables.forEach(t=> t.caption = "Gerundive · "+t.caption);
-  return { prompt:`Give the <b>gerund and gerundive</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span>`,
-    tables:[{ caption:"Gerund", colHeads:["form"], rows:gRows }, ...gvTables] };
+  return { prompt:`Give every case of the <b>gerund</b> of <span class="lat">${e.cite}</span> <span class="muted">(${e.gloss})</span>`,
+    tables:[{ colHeads:["form"], rows:gRows }] };
 }
 function fmtMs(ms){
   const m=Math.floor(ms/60000), s=(ms%60000)/1000;
@@ -3038,18 +3056,19 @@ function renderSpeedTable(run){
     if(nxt) nxt.inp.focus();
   };
   cells.forEach(({inp, cell})=>{
-    const commit = ()=>{
+    const commit = (viaEnter)=>{
       if(run.done || inp.disabled) return;
       const val = inp.value.trim(); if(!val) return;
       const ok = gradeForm(val, cell.answer, false)==="correct";
       if(!(cell.itemKey in run.firstTry)){ run.firstTry[cell.itemKey]=ok; recordResult(cell.itemKey, cell.category, ok); }
       if(ok){
         inp.classList.remove("bad"); inp.classList.add("good"); inp.disabled=true;
-        if(cells.every(c=>c.inp.disabled)) finishSpeedRun(run); else focusNext(inp);
+        if(cells.every(c=>c.inp.disabled)) finishSpeedRun(run);
+        else if(viaEnter) focusNext(inp);   // clicking elsewhere keeps the user's chosen cell
       } else { run.errors++; inp.classList.add("bad"); }
     };
-    inp.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); commit(); } });
-    inp.addEventListener("blur",commit);
+    inp.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); commit(true); } });
+    inp.addEventListener("blur",()=>commit(false));
     inp.addEventListener("input",()=>inp.classList.remove("bad"));
   });
   setTimeout(()=>{ const f=wrap.querySelector("input:not([disabled])"); if(f) f.focus(); },30);
@@ -3060,7 +3079,11 @@ function speedBoard(card, ev){
   const scopeRow = el("div",{class:"chooser"});
   [["class","My class"],["global","Global"]].forEach(([id,label])=>
     scopeRow.appendChild(el("button",{class:"choice small"+(((state.ui.sbScope||"class")===id)?" sel":""), onclick:()=>{ state.ui.sbScope=id; renderApp(); }}, label)));
-  card.appendChild(field("Board", scopeRow));
+  card.appendChild(el("div",{class:"lbhead"},
+    el("h2",{class:"cardh", style:"margin:0"},"Best times"),
+    el("span",{class:"muted small"}, (SPEED_EVENTS.find(x=>x.id===ev)||{}).full||""),
+    el("span",{class:"lbspacer"}),
+    scopeRow));
   const scope = state.ui.sbScope || "class";
   const prog = DB.progress(me.uid);
   const rows = [];
@@ -3091,10 +3114,7 @@ function speedBoard(card, ev){
       } else harvest(state._lbGlobal);
     } else card.appendChild(el("p",{class:"muted small"}, "Local mode shows only you. Connect accounts to race globally."));
   }
-  card.appendChild(el("div",{class:"lbhead"},
-    el("h2",{class:"cardh", style:"margin:0"},"Best times"),
-    el("span",{class:"muted small"}, (SPEED_EVENTS.find(x=>x.id===ev)||{}).label||"")));
-  if(!rows.length){ card.appendChild(el("p",{class:"muted"}, "No times yet — finish a run to set one.")); return; }
+  if(!rows.length){ card.appendChild(el("p",{class:"muted"}, "No times yet.")); return; }
   rows.sort((a,b)=> a.ms-b.ms);
   const t = el("table",{class:"roster"});
   t.appendChild(el("tr",{}, el("th",{},"#"), el("th",{},"Student"), el("th",{},"Time")));
@@ -3121,7 +3141,6 @@ function renderSpeed(main){
       el("span",{class:"speederr", id:"speederr"}, run.errors+" errors"),
       el("button",{class:"ghost", onclick:()=>{ state._speedRun=null; if(state._speedIv){clearInterval(state._speedIv); state._speedIv=null;} renderApp(); }}, "Abandon run")));
     card.appendChild(el("p",{class:"prompt", html:run.q.prompt}));
-    card.appendChild(el("p",{class:"muted small"}, "Enter or Tab checks a cell. Wrong cells lock red until you fix them — the clock keeps running."));
     card.appendChild(renderSpeedTable(run));
     main.appendChild(card);
     if(state._speedIv) clearInterval(state._speedIv);
@@ -3134,9 +3153,15 @@ function renderSpeed(main){
 
   const setup = el("section",{class:"card"});
   setup.appendChild(el("h2",{class:"cardh"},"Event"));
-  const chooser = el("div",{class:"chooser"});
-  SPEED_EVENTS.forEach(e=> chooser.appendChild(el("button",{class:"choice small"+(ev===e.id?" sel":""), onclick:()=>{ state.ui.speedEvent=e.id; state._speedRun=null; renderApp(); }}, e.label)));
-  setup.appendChild(chooser);
+  const groups = el("div",{class:"evgroups"});
+  SPEED_GROUPS.forEach(gname=>{
+    const row = el("div",{class:"evgroup"});
+    row.appendChild(el("span",{class:"grouplab"}, gname));
+    SPEED_EVENTS.filter(e=>e.group===gname).forEach(e=>
+      row.appendChild(el("button",{class:"choice small"+(ev===e.id?" sel":""), onclick:()=>{ state.ui.speedEvent=e.id; state._speedRun=null; renderApp(); }}, e.label)));
+    groups.appendChild(row);
+  });
+  setup.appendChild(groups);
   const prog = DB.progress(state.user.uid);
   const best = prog.speed && prog.speed[ev];
   if(run && run.done && run.ev===ev){
@@ -3146,12 +3171,10 @@ function renderSpeed(main){
         stat(run.errors, "errors"),
         stat(best?fmtMs(best.ms):"—", "personal best")),
       run.isBest ? el("p",{class:"vline ok"}, el("b",{},"New personal best!")) : null));
-  } else {
-    setup.appendChild(el("p",{class:"muted"}, best
-      ? `A random word from the lexicon; fill its whole table as fast as you can. Personal best: ${fmtMs(best.ms)}.`
-      : "A random word from the lexicon; fill its whole table as fast as you can. The clock starts immediately."));
   }
-  setup.appendChild(el("button",{class:"primary big", onclick:startSpeedRun}, run&&run.done ? "Run again" : "Begin"));
+  setup.appendChild(el("div",{class:"speedstart"},
+    el("button",{class:"primary", onclick:startSpeedRun}, run&&run.done ? "Run again" : "Begin"),
+    (!run || !run.done) && best ? el("span",{class:"pbchip"}, "Personal best ", el("b",{}, fmtMs(best.ms))) : null));
   main.appendChild(setup);
 
   const board = el("section",{class:"card"});
@@ -3183,7 +3206,6 @@ function renderProgress(main){
   const cats = Object.entries(buckets).sort((a,b)=> b[1].correct - a[1].correct);
   const card = el("section",{class:"card"});
   card.appendChild(el("h2",{class:"cardh"},"Correct by category (all time)"));
-  card.appendChild(el("p",{class:"muted small", style:"margin-top:-4px"},"Bar shows accuracy; the count is correct / answered."));
   if(!cats.length) card.appendChild(el("p",{class:"muted"},"No data yet. Complete a drill to populate this."));
   cats.forEach(([label,c])=>{
     const w = c.seen ? Math.round(100*c.correct/c.seen) : 0;
@@ -3501,7 +3523,6 @@ function renderTeacher(main){
   wc.appendChild(el("h2",{class:"cardh"},"Class weak spots"));
   const weak = classWeakSpots(attempts);
   if(weak.length){
-    wc.appendChild(el("p",{class:"muted small", style:"margin:0 0 14px"}, "Form categories the class misses most, pooled across every submission."));
     weak.slice(0,8).forEach(w=>{
       const pctMiss = Math.round(100*w.miss);
       wc.appendChild(el("div",{class:"bar"},
