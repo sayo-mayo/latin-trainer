@@ -3097,7 +3097,22 @@ const SCOPE = {
     ]
   },
   parse: { label:"Parsing", usesModule:true },
-  translate: { label:"Translation" }
+  translate: { label:"Translation",
+    groups:[
+      { id:"t1", label:"3rd-decl. adjectives" },
+      { id:"t2", label:"Pronouns & 4th decl." },
+      { id:"t3", label:"Imperatives, time & place, numerals" },
+      { id:"t4", label:"Present passive & 5th decl." },
+      { id:"t5", label:"Perfect passive & comparison" },
+      { id:"t6", label:"Relative clauses, hic & ille, adverbs" },
+      { id:"t7", label:"Deponent verbs; alius & alter" },
+      { id:"t8", label:"possum, eo, fero; ipse, idem, nemo" }
+    ],
+    dirs:[
+      { id:"le", label:"Latin \u2192 English" },
+      { id:"el", label:"English \u2192 Latin" }
+    ]
+  }
 };
 const TENSE_LABEL = { present:"present", imperfect:"imperfect", future:"future", perfect:"perfect", pluperfect:"pluperfect", futurePerfect:"future perfect" };
 const NUM_LABEL = { sg:"singular", pl:"plural" };
@@ -3510,22 +3525,240 @@ function genParse(sel){
     paradigm:()=>null };
 }
 
-/* ---- translation (self-marked) ---- */
+/* ---- translation (self-marked, topic-toggled) ----
+   Bank built from the "Latin 1-8 (Set 1)" worksheets, Section B.
+   t1-t8 = worksheet grammar topics; revision items are tagged to the topic they revise.
+   d: "le" Latin->English, "el" English->Latin. */
 const TRANSLATE_BANK = [
-  { lat:"Arma virumque canō.", model:"I sing of arms and the man." },
-  { lat:"Mīlitēs, hortātus ducem, in hostēs ruērunt.", model:"The soldiers, having encouraged the general, rushed against the enemy." },
-  { lat:"Sī hoc dīxisset, omnēs eum audīvissent.", model:"If he had said this, everyone would have listened to him." },
-  { lat:"Tantus erat clāmor ut nēmō vōcem ducis audīret.", model:"So great was the shouting that no one could hear the general's voice." },
-  { lat:"Urbe captā, cīvēs ad templa cōnfūgērunt.", model:"When the city had been captured, the citizens fled to the temples." },
-  { lat:"Rēx, quī fortissimus omnium erat, prīmus pugnāvit.", model:"The king, who was the bravest of all, fought first." },
-  { lat:"Haec nōbīs facienda sunt antequam nox veniat.", model:"These things must be done by us before night comes." },
-  { lat:"Caesar tam celeriter vēnit ut hostēs nōn parātī essent.", model:"Caesar came so quickly that the enemy were not prepared." }
+  { t:"t1", d:"le", src:"milites fortes urbem nobilem acriter defendebant.", model:"The brave soldiers were fiercely defending the noble city." },
+  { t:"t1", d:"le", src:"hostis audax gladio gravi ducem nostrum vulneravit.", model:"The bold enemy wounded our leader with a heavy sword." },
+  { t:"t1", d:"el", src:"The anger of the cruel kings was great.", model:"ira regum crudelium magna erat." },
+  { t:"t1", d:"el", src:"Without a faithful friend the journey through the mountains was difficult.", model:"sine amico fideli iter per montes difficile erat." },
+  { t:"t1", d:"le", src:"nauta prudens navem celerem per undas egit.", model:"The wise sailor drove the swift ship through the waves." },
+  { t:"t1", d:"le", src:"omnia animalia tempestatem timebant.", model:"All the animals feared the storm." },
+  { t:"t1", d:"le", src:"rex potens, postquam urbem cepit, omnes cives liberos dimisit.", model:"The powerful king, after he captured the city, set all the citizens free." },
+  { t:"t1", d:"el", src:"The son of the miserable king fought in a terrible war.", model:"filius regis miseri in bello terribili pugnavit." },
+  { t:"t1", d:"el", src:"The new song was beautiful but the words were difficult.", model:"carmen novum pulchrum erat sed verba difficilia erant." },
+  { t:"t1", d:"el", src:"On the easy road the small boy found a short sword.", model:"in via facili puer parvus gladium brevem invenit." },
+  { t:"t1", d:"le", src:"epistolam puella brevem ad fratrem misit.", model:"The girl sent a short letter to her brother." },
+  { t:"t1", d:"le", src:"in pugnam difficilem milites suos dux fortis ducebat.", model:"The brave leader was leading his soldiers into a difficult battle." },
+  { t:"t1", d:"le", src:"pueri puellaeque, laeti et alacres, de colle currebant.", model:"The boys and girls, happy and eager, were running down from the hill." },
+  { t:"t1", d:"le", src:"olim cives Romae miseri et tristes erant.", model:"Once the citizens of Rome were wretched and sad." },
+  { t:"t1", d:"le", src:"milites nostri, quamquam erant fessi, hostes crudeles in mari superaverunt.", model:"Our soldiers, although they were tired, overcame the cruel enemy at sea." },
+  { t:"t1", d:"el", src:"The brave men feared the journey through the steep mountains.", model:"viri fortes iter per montes arduos timebant." },
+  { t:"t1", d:"el", src:"The swift messenger announced the news to the powerful general with great joy.", model:"nuntius celer imperatori potenti magno cum gaudio rem nuntiavit." },
+  { t:"t1", d:"el", src:"The fierce enemies quickly destroyed the short bridge.", model:"hostes feroces pontem brevem celeriter deleverunt." },
+  { t:"t1", d:"el", src:"The Romans built a huge wall because they feared the bold enemy.", model:"Romani murum ingentem aedificaverunt quod hostes audaces timebant." },
+  { t:"t1", d:"el", src:"Caesar, a brave and keen leader, always led his forces with great courage.", model:"Caesar, dux fortis et acer, copias suas magna cum virtute semper ducebat." },
+  { t:"t1", d:"el", src:"The faithful citizens bravely defended the walls of the noble cities.", model:"cives fideles muros urbium nobilium fortiter defenderunt." },
+  { t:"t1", d:"le", src:"milites Romani, fortes et celeres, hostes feroces superaverunt.", model:"The Roman soldiers, brave and swift, overcame the fierce enemy." },
+  { t:"t1", d:"le", src:"flumina ingentia per campos latos fluebant.", model:"Huge rivers were flowing through the broad plains." },
+  { t:"t1", d:"le", src:"barbari crudeles et atroces fines nostros vastaverunt.", model:"The cruel and savage barbarians laid waste our territory." },
+  { t:"t1", d:"le", src:"puer audax et puella acris lupum subito viderunt.", model:"The bold boy and the keen girl suddenly saw a wolf." },
+  { t:"t1", d:"le", src:"femina nobilis in templo sedebat, dum nuntius tristis adveniebat.", model:"The noble woman was sitting in the temple while the sad messenger was arriving." },
+  { t:"t1", d:"le", src:"senex prudens de bello gravi et de morte amicorum narrabat.", model:"The wise old man was telling about the serious war and about the death of his friends." },
+  { t:"t2", d:"el", src:"Tomorrow they will come into the city with us.", model:"cras nobiscum in urbem venient." },
+  { t:"t2", d:"le", src:"te adiuvare semper cupiebam.", model:"I always wanted to help you." },
+  { t:"t2", d:"el", src:"Coriolanus, your friends no longer love you.", model:"Coriolane, amici tui te non iam amant." },
+  { t:"t2", d:"el", src:"Does your hatred of us compel you to attack the city?", model:"odiumne nostri te urbem oppugnare cogit?" },
+  { t:"t2", d:"le", src:"mater eius nos in foro vidit.", model:"His mother saw us in the forum." },
+  { t:"t2", d:"le", src:"epistolam ad eum cras mittemus.", model:"We will send a letter to him tomorrow." },
+  { t:"t2", d:"le", src:"num nobis nocere cupis?", model:"Surely you do not want to harm us?" },
+  { t:"t2", d:"el", src:"They saw them in the forum, but they did not see you all.", model:"eos in foro viderunt, sed vos non viderunt." },
+  { t:"t2", d:"le", src:"rex captivos in domo sua tenebat.", model:"The king was holding the captives in his own house." },
+  { t:"t2", d:"le", src:"dominus cum eis ad forum ambulabat.", model:"The master was walking with them to the forum." },
+  { t:"t2", d:"le", src:"fortasse nos intra muros vocare cupiebat.", model:"Perhaps he wanted to call us inside the walls." },
+  { t:"t2", d:"el", src:"At dawn he will lead the army out of the harbour.", model:"prima luce exercitum ex portu ducet." },
+  { t:"t2", d:"el", src:"The old man sat on the steps of the house because the soldiers had wounded his knee.", model:"senex in gradibus domus sedebat quod milites genu eius vulneraverant." },
+  { t:"t2", d:"el", src:"With our own hands we built a new house.", model:"manibus nostris domum novam aedificavimus." },
+  { t:"t2", d:"le", src:"dux exercituum signum manu dedit.", model:"The leader of the armies gave the signal with his hand." },
+  { t:"t2", d:"le", src:"regina eius consilium timebat, sed copias suas in proelium misit.", model:"The queen feared his plan, but sent her own forces into battle." },
+  { t:"t2", d:"le", src:"milites ducem suum in periculo non reliquerunt.", model:"The soldiers did not abandon their own leader in danger." },
+  { t:"t2", d:"le", src:"dux eos ad se statim venire iussit.", model:"The leader ordered them to come to him at once." },
+  { t:"t2", d:"le", src:"domus ei prope portum erat.", model:"He had a house near the harbour." },
+  { t:"t2", d:"le", src:"unus eorum mihi epistolam tradidit.", model:"One of them handed a letter to me." },
+  { t:"t2", d:"el", src:"In the forum we often hear their voices.", model:"in foro voces eorum saepe audimus." },
+  { t:"t2", d:"el", src:"Perhaps they were not able to persuade him.", model:"fortasse ei persuadere non poterant." },
+  { t:"t2", d:"el", src:"Will you all come to the harbour with me?", model:"venietisne mecum ad portum?" },
+  { t:"t2", d:"el", src:"Did you see that large house near the harbour?", model:"vidistine eam domum magnam prope portum?" },
+  { t:"t1", d:"le", src:"cives omnes regem crudelem et ferocem valde timebant.", model:"All the citizens greatly feared the cruel and fierce king." },
+  { t:"t1", d:"el", src:"The sad boy was reading a difficult book in the garden.", model:"puer tristis librum difficilem in horto legebat." },
+  { t:"t1", d:"le", src:"hostes feroces naves celeres prope litus delebant.", model:"The fierce enemy were destroying the swift ships near the shore." },
+  { t:"t3", d:"el", src:"Lead the soldiers into the city, Brutus!", model:"duc milites in urbem, Brute!" },
+  { t:"t3", d:"el", src:"Be brave, soldiers, and defend the walls!", model:"este fortes, milites, et muros defendite!" },
+  { t:"t3", d:"el", src:"In three days the Romans captured the one camp.", model:"tribus diebus Romani una castra ceperunt." },
+  { t:"t3", d:"el", src:"The only forces defended the city with great courage.", model:"solae copiae magna cum virtute urbem defenderunt." },
+  { t:"t3", d:"el", src:"With three friends he hurried to Rome.", model:"cum tribus amicis Romam festinavit." },
+  { t:"t3", d:"le", src:"magister pueros tertia hora docebat, sed nihil discebant.", model:"The master was teaching the boys at the third hour, but they were learning nothing." },
+  { t:"t3", d:"le", src:"unius viri virtus totam urbem servavit.", model:"The courage of one man saved the whole city." },
+  { t:"t3", d:"le", src:"Lars Porsenna cum exercitu magno abhinc multos annos Romam oppugnavit.", model:"Many years ago Lars Porsenna attacked Rome with a great army." },
+  { t:"t3", d:"le", src:"senex fessus prima luce domum rediit.", model:"The tired old man returned home at dawn." },
+  { t:"t3", d:"le", src:"milites media nocte dormiebant, sed anseres sacri subito clamaverunt.", model:"The soldiers were sleeping in the middle of the night, but the sacred geese suddenly cried out." },
+  { t:"t3", d:"el", src:"In the tenth year the citizens drove the wicked king out of the town.", model:"decimo anno cives regem malum ex oppido expulerunt." },
+  { t:"t3", d:"el", src:"For five years the king ruled the whole island.", model:"quinque annos rex totam insulam regebat." },
+  { t:"t3", d:"el", src:"During the third year the enemy finally destroyed the bridge.", model:"tertio anno hostes pontem tandem deleverunt." },
+  { t:"t3", d:"le", src:"Horatius pontem multas horas solus defendebat nec hostibus cedebat.", model:"Horatius alone was defending the bridge for many hours and was not yielding to the enemy." },
+  { t:"t3", d:"el", src:"Did you hear the sacred geese during the night?", model:"audivistine anseres sacros nocte?" },
+  { t:"t3", d:"el", src:"Within five days he will sail to Ithaca.", model:"quinque diebus Ithacam navigabit." },
+  { t:"t3", d:"el", src:"Boys, say nothing for many days!", model:"pueri, multos dies nihil dicite!" },
+  { t:"t3", d:"el", src:"In the second year the weary soldier returned home from the country.", model:"secundo anno miles fessus rure domum rediit." },
+  { t:"t3", d:"el", src:"For two days they marched to Athens through the high mountains.", model:"duos dies per montes altos Athenas contenderunt." },
+  { t:"t3", d:"el", src:"With one hand the brave soldier seized the enemy's standard.", model:"una manu miles fortis signum hostium rapuit." },
+  { t:"t3", d:"le", src:"unum amicum fidelem habebat, sed inimicos multos timebat.", model:"He had one faithful friend, but feared many enemies." },
+  { t:"t3", d:"le", src:"cives urbem suam multos dies summa cum virtute defendebant.", model:"The citizens defended their own city for many days with the utmost courage." },
+  { t:"t3", d:"le", src:"nocte per silvam densam rus ambulabamus.", model:"At night we were walking through the dense wood into the country." },
+  { t:"t3", d:"le", src:"fac hoc statim, mi fili, et magistrum semper audi!", model:"Do this at once, my son, and always listen to the master!" },
+  { t:"t2", d:"el", src:"They gave money to us, but nothing to you.", model:"pecuniam nobis dederunt, sed tibi nihil dederunt." },
+  { t:"t2", d:"el", src:"With their own hands they built a new home near the harbour.", model:"manibus suis domum novam prope portum aedificaverunt." },
+  { t:"t2", d:"el", src:"We often saw them in his house.", model:"eos in domo eius saepe videbamus." },
+  { t:"t4", d:"le", src:"templum novum aedificatur.", model:"A new temple is being built." },
+  { t:"t4", d:"le", src:"captivi in foro tenentur.", model:"The prisoners are being held in the forum." },
+  { t:"t4", d:"le", src:"milites ab imperatore semper laudantur.", model:"The soldiers are always praised by the general." },
+  { t:"t4", d:"le", src:"urbs muris altis defenditur.", model:"The city is defended by high walls." },
+  { t:"t4", d:"el", src:"The wretched captives are found near the gate.", model:"captivi miseri prope portam inveniuntur." },
+  { t:"t4", d:"el", src:"The fierce enemy wanted the bridge to be destroyed.", model:"hostes feroces pontem deleri cupiebant." },
+  { t:"t4", d:"el", src:"A long letter is being sent to the consul.", model:"epistola longa ad consulem mittitur." },
+  { t:"t4", d:"el", src:"The prisoners will be led into the city by the soldiers.", model:"captivi a militibus in urbem ducentur." },
+  { t:"t4", d:"el", src:"The walls of the town were being attacked with stones.", model:"muri oppidi saxis oppugnabantur." },
+  { t:"t4", d:"el", src:"The song was being sung by the girls with great joy.", model:"carmen a puellis magno cum gaudio cantabatur." },
+  { t:"t4", d:"el", src:"The sailors will be terrified by the great storm.", model:"nautae tempestate magna terrebuntur." },
+  { t:"t4", d:"el", src:"The boys were being taught by a wise teacher.", model:"pueri a magistro sapienti docebantur." },
+  { t:"t3", d:"el", src:"The soldiers remained in the camp for many days.", model:"milites multos dies in castris manserunt." },
+  { t:"t4", d:"el", src:"Within a few days the city will be captured.", model:"paucis diebus urbs capietur." },
+  { t:"t4", d:"el", src:"The end of the affair was pleasing to all the citizens.", model:"finis rei omnibus civibus gratus erat." },
+  { t:"t4", d:"le", src:"naves longae in portu parabantur.", model:"The warships were being prepared in the harbour." },
+  { t:"t4", d:"le", src:"oppidum a Gallis feris vastabatur.", model:"The town was being laid waste by the savage Gauls." },
+  { t:"t4", d:"le", src:"urbs nostra a militibus fortibus servabitur.", model:"Our city will be saved by the brave soldiers." },
+  { t:"t3", d:"le", src:"ille miles fortis in castris paucos dies mansit.", model:"That brave soldier remained in the camp for a few days." },
+  { t:"t4", d:"el", src:"The captives will be thrown from the high walls into the sea.", model:"captivi de muris altis in mare iacientur." },
+  { t:"t4", d:"el", src:"The voices of the women were heard through the whole city.", model:"voces feminarum per totam urbem audiebantur." },
+  { t:"t3", d:"le", src:"media nocte naves ad portum lente navigabant.", model:"In the middle of the night the ships were sailing slowly to the harbour." },
+  { t:"t4", d:"el", src:"The children will be defended by their own parents.", model:"liberi a parentibus suis defendentur." },
+  { t:"t4", d:"el", src:"The town could not be defended for many days.", model:"oppidum multos dies defendi non poterat." },
+  { t:"t3", d:"el", src:"With three friends he walked to the country.", model:"cum tribus amicis rus ambulavit." },
+  { t:"t3", d:"le", src:"tertio die dux fessus domum rediit.", model:"On the third day the tired leader returned home." },
+  { t:"t3", d:"le", src:"abhinc multos annos rex saevus oppidum delevit.", model:"Many years ago the savage king destroyed the town." },
+  { t:"t5", d:"le", src:"naves longae ad insulam cum multis legionibus missae sunt.", model:"The warships were sent to the island with many legions." },
+  { t:"t5", d:"le", src:"dux fortis a militibus suis servatus est.", model:"The brave leader was saved by his own soldiers." },
+  { t:"t4", d:"le", src:"multos dies castra a Gallis oppugnabantur.", model:"For many days the camp was being attacked by the Gauls." },
+  { t:"t5", d:"el", src:"The brave sailors have been seen by the enemy near the harbour.", model:"nautae fortes ab hostibus prope portum visi sunt." },
+  { t:"t5", d:"el", src:"By the third day the city will have been captured.", model:"tertio die urbs capta erit." },
+  { t:"t5", d:"el", src:"The proud king had been driven out of the city by the citizens.", model:"rex superbus a civibus ex urbe expulsus erat." },
+  { t:"t5", d:"le", src:"captivi in carcere multas noctes manere coacti erant.", model:"The prisoners had been forced to remain in prison for many nights." },
+  { t:"t5", d:"el", src:"The mountain was higher than the walls.", model:"mons altior quam muri erat." },
+  { t:"t5", d:"el", src:"Write a longer letter to your friend, boy!", model:"scribe epistolam longiorem amico tuo, puer!" },
+  { t:"t5", d:"el", src:"Our soldiers waged a very fierce war for many years.", model:"milites nostri multos annos bellum ferocissimum gesserunt." },
+  { t:"t5", d:"el", src:"The Romans were overcome by bolder and stronger enemies.", model:"Romani ab hostibus audacioribus et fortioribus superati sunt." },
+  { t:"t5", d:"el", src:"Before the greatest battle the general encouraged his soldiers.", model:"ante proelium maximum imperator milites suos incitavit." },
+  { t:"t5", d:"el", src:"On a very easy road they came to the city.", model:"via facillima ad urbem venerunt." },
+  { t:"t5", d:"el", src:"The girls were singing the most beautiful songs.", model:"puellae carmina pulcherrima cantabant." },
+  { t:"t5", d:"el", src:"We saw the walls of the biggest city.", model:"muros urbis maximae vidimus." },
+  { t:"t5", d:"el", src:"The brave general has been praised by all the citizens.", model:"imperator fortis ab omnibus civibus laudatus est." },
+  { t:"t5", d:"el", src:"The boys will have been taught by the best teacher.", model:"pueri a magistro optimo docti erunt." },
+  { t:"t5", d:"el", src:"The town had been captured by a smaller army.", model:"oppidum ab exercitu minore captum erat." },
+  { t:"t5", d:"el", src:"The girl was braver than all the boys.", model:"puella fortior erat quam omnes pueri." },
+  { t:"t5", d:"el", src:"The rewards will have been given to the bravest soldiers.", model:"praemia militibus fortissimis data erunt." },
+  { t:"t5", d:"el", src:"The most difficult journey was made through the mountains.", model:"iter difficillimum per montes factum est." },
+  { t:"t5", d:"el", src:"The soldiers had been warned by the wise leader.", model:"milites a duce prudenti moniti erant." },
+  { t:"t4", d:"el", src:"Within five days the bridge will be built by the soldiers.", model:"quinque diebus pons a militibus aedificabitur." },
+  { t:"t4", d:"el", src:"The frightened children are found in the temple.", model:"liberi territi in templo inveniuntur." },
+  { t:"t4", d:"el", src:"The farmers will be terrified by the fierce wolves.", model:"agricolae lupis ferocibus terrebuntur." },
+  { t:"t6", d:"el", src:"The boy, who is singing, is my friend.", model:"puer, qui cantat, amicus meus est." },
+  { t:"t6", d:"el", src:"The women, to whom we give gifts, are happy.", model:"feminae, quibus dona damus, laetae sunt." },
+  { t:"t6", d:"el", src:"We were walking with the soldier, whose son had died.", model:"cum milite, cuius filius mortuus erat, ambulabamus." },
+  { t:"t6", d:"le", src:"flumen, quod altum erat, copias nostras tenebat.", model:"The river, which was deep, was holding back our forces." },
+  { t:"t6", d:"le", src:"femina, cuius filius aegrotabat, medicum vocavit.", model:"The woman, whose son was ill, called a doctor." },
+  { t:"t6", d:"le", src:"rex, cuius copiae victae erant, pacem petivit.", model:"The king, whose forces had been conquered, sought peace." },
+  { t:"t6", d:"el", src:"The soldier, whom we had seen, was very brave.", model:"miles, quem videramus, fortissimus erat." },
+  { t:"t6", d:"el", src:"The girl, whom we had warned, quickly departed.", model:"puella, quam monueramus, celeriter discessit." },
+  { t:"t6", d:"el", src:"The general, whose army was fighting bravely, was very bold.", model:"imperator, cuius exercitus fortiter pugnabat, audacissimus erat." },
+  { t:"t6", d:"el", src:"The inhabitants, by whom we were being watched, lived in the high mountains.", model:"incolae, a quibus spectabamur, in montibus altis habitabant." },
+  { t:"t6", d:"le", src:"Pyrrhus, quem omnes timebant, ex Italia discessit.", model:"Pyrrhus, whom everyone feared, departed from Italy." },
+  { t:"t6", d:"le", src:"milites, quos dux laudaverat, fortiter pugnaverunt.", model:"The soldiers, whom the leader had praised, fought bravely." },
+  { t:"t6", d:"el", src:"We saw the man to whom the king had given much money.", model:"virum vidimus, cui rex multam pecuniam dederat." },
+  { t:"t6", d:"el", src:"They fear the army which Pyrrhus is leading into our land.", model:"exercitum timent, quem Pyrrhus in terram nostram ducit." },
+  { t:"t5", d:"el", src:"The brave general led his men into the greatest danger on behalf of the fatherland.", model:"imperator fortis pro patria viros suos in periculum maximum duxit." },
+  { t:"t6", d:"el", src:"This soldier fought most bravely.", model:"hic miles fortissime pugnavit." },
+  { t:"t6", d:"el", src:"We often saw those girls in the forum.", model:"illas puellas in foro saepe videbamus." },
+  { t:"t6", d:"le", src:"illorum agricolarum filii in bello pugnabant.", model:"The sons of those farmers were fighting in the war." },
+  { t:"t6", d:"le", src:"haec bella multos annos gerebantur.", model:"These wars were waged for many years." },
+  { t:"t6", d:"el", src:"Those soldiers were fiercely attacking that city.", model:"illi milites illam urbem ferociter oppugnabant." },
+  { t:"t6", d:"el", src:"We understand these laws well now.", model:"has leges nunc bene intellegimus." },
+  { t:"t6", d:"el", src:"Those kings ruled this city badly for many years.", model:"illi reges hanc urbem multos annos male regebant." },
+  { t:"t6", d:"el", src:"The Romans fought more bravely than the Gauls.", model:"Romani fortius quam Galli pugnaverunt." },
+  { t:"t6", d:"el", src:"The citizens wanted to hand over the gold to the enemy very quickly.", model:"cives aurum hostibus celerrime tradere cupiebant." },
+  { t:"t5", d:"le", src:"oppidum ab hostibus captum erat, sed cives fortissimi non cesserunt.", model:"The town had been captured by the enemy, but the very brave citizens did not yield." },
+  { t:"t5", d:"el", src:"The city had been defended by braver soldiers.", model:"urbs a militibus fortioribus defensa erat." },
+  { t:"t5", d:"el", src:"The poet wrote the most beautiful poems.", model:"poeta carmina pulcherrima scripsit." },
+  { t:"t7", d:"el", src:"The general is encouraging the tired soldiers.", model:"imperator milites fessos hortatur." },
+  { t:"t7", d:"el", src:"We were fearing the anger of the gods.", model:"iram deorum verebamur." },
+  { t:"t7", d:"el", src:"They were trying to cross the deep river.", model:"flumen altum transire conabantur." },
+  { t:"t7", d:"el", src:"I will encourage my men before the battle.", model:"viros meos ante proelium hortabor." },
+  { t:"t7", d:"el", src:"The soldiers shared the booty among themselves.", model:"milites praedam inter se partiti sunt." },
+  { t:"t7", d:"el", src:"The old man seems to be very wise.", model:"senex sapientissimus esse videtur." },
+  { t:"t7", d:"el", src:"The enemy have been seen near the walls.", model:"hostes prope muros visi sunt." },
+  { t:"t7", d:"el", src:"The boys seem to fear the master.", model:"pueri magistrum timere videntur." },
+  { t:"t7", d:"le", src:"hostes noctu castra oppugnare non audebunt.", model:"The enemy will not dare to attack the camp at night." },
+  { t:"t7", d:"le", src:"Romani ante lucem proficisci solebant.", model:"The Romans were accustomed to set out before dawn." },
+  { t:"t7", d:"le", src:"senes de bello saepe loqui soliti erant.", model:"The old men had been accustomed to speak often about the war." },
+  { t:"t7", d:"le", src:"cives propter pacem magnopere gaudebant.", model:"The citizens were rejoicing greatly because of the peace." },
+  { t:"t7", d:"le", src:"legiones ad flumen lente progrediebantur.", model:"The legions were advancing slowly to the river." },
+  { t:"t7", d:"le", src:"omnes virtutem ducis mirantur.", model:"Everyone admires the courage of the leader." },
+  { t:"t7", d:"le", src:"rex nuntio propter verba mala irascebatur.", model:"The king was angry with the messenger because of his wicked words." },
+  { t:"t7", d:"el", src:"Many soldiers will die in the war every day.", model:"multi milites cotidie in bello morientur." },
+  { t:"t7", d:"el", src:"The Greeks seemed to fight more fiercely than the Romans.", model:"Graeci ferocius quam Romani pugnare videbantur." },
+  { t:"t7", d:"el", src:"A great storm arose during the night.", model:"magna tempestas nocte orta est." },
+  { t:"t7", d:"el", src:"One consul wanted peace, but the other wanted war.", model:"alter consul pacem cupiebat, alter bellum." },
+  { t:"t7", d:"el", src:"We set out before the others had won another victory.", model:"profecti sumus antequam ceteri alteram victoriam reportaverunt." },
+  { t:"t7", d:"el", src:"After the general had spoken, the rest of the soldiers rejoiced.", model:"postquam dux locutus est, ceteri milites gavisi sunt." },
+  { t:"t7", d:"el", src:"The bravest soldiers fought for many hours, but the rest had fled.", model:"milites fortissimi multas horas pugnaverunt, sed ceteri fugerant." },
+  { t:"t7", d:"el", src:"We were dining at the house of the other consul every day.", model:"apud alterum consulem cotidie cenabamus." },
+  { t:"t6", d:"le", src:"nautae, quos tempestas terruerat, ad portum celeriter navigabant.", model:"The sailors, whom the storm had terrified, were sailing quickly to the harbour." },
+  { t:"t6", d:"el", src:"The messenger, whom the king had sent, arrived at night.", model:"nuntius, quem rex miserat, nocte advenit." },
+  { t:"t6", d:"el", src:"This is the soldier who fought most bravely.", model:"hic est miles qui fortissime pugnavit." },
+  { t:"t6", d:"el", src:"These citizens fought more fiercely than those men.", model:"hi cives ferocius quam illi viri pugnaverunt." },
+  { t:"t8", d:"el", src:"He is able to carry the heavy shield.", model:"scutum grave ferre potest." },
+  { t:"t8", d:"el", src:"They were carrying water to the camp.", model:"aquam ad castra ferebant." },
+  { t:"t8", d:"le", src:"mox arma extra urbem ferent.", model:"Soon they will carry the weapons outside the city." },
+  { t:"t8", d:"le", src:"heri aquam ad flumen ferebatis.", model:"Yesterday you were carrying water to the river." },
+  { t:"t8", d:"le", src:"hostes urbem nostram capere non poterant.", model:"The enemy were not able to capture our city." },
+  { t:"t8", d:"el", src:"The brave soldier was able to bear the wound for many hours.", model:"miles fortis vulnus multas horas ferre poterat." },
+  { t:"t8", d:"el", src:"First we will approach the walls of the city.", model:"primum ad muros urbis adibimus." },
+  { t:"t8", d:"el", src:"Were you carrying the gifts to the queen?", model:"ferebasne reginae dona?" },
+  { t:"t8", d:"el", src:"Water was being carried to the tired soldiers.", model:"aqua militibus fessis ferebatur." },
+  { t:"t8", d:"el", src:"He will go into the city with the same friends who are able to help him.", model:"in urbem ibit cum eisdem amicis qui eum adiuvare possunt." },
+  { t:"t8", d:"el", src:"We were going to the same place from which the enemy had come.", model:"ad eundem locum ibamus ex quo hostes venerant." },
+  { t:"t8", d:"el", src:"He was carrying a wounded friend home because the others had already fled.", model:"amicum vulneratum domum ferebat quod ceteri iam fugerant." },
+  { t:"t8", d:"le", src:"rex superbus neminem timebat.", model:"The proud king feared no one." },
+  { t:"t8", d:"le", src:"eaedem feminae iterum in foro cantabunt.", model:"The same women will sing again in the forum." },
+  { t:"t8", d:"le", src:"ite ad castra et ferte cibum captivis, quos hostes ceperunt!", model:"Go to the camp and carry food to the prisoners whom the enemy have captured!" },
+  { t:"t8", d:"le", src:"aurum a militibus eisdem in castra latum est.", model:"The gold was carried into the camp by the same soldiers." },
+  { t:"t8", d:"le", src:"ille dux ipse, qui exercitum ducebat, hostes vincere non potuit.", model:"That leader himself, who was leading the army, was not able to conquer the enemy." },
+  { t:"t8", d:"le", src:"nuntii ipsi, qui epistolas ad regem ferebant, celeriter currebant.", model:"The messengers themselves, who were carrying the letters to the king, were running quickly." },
+  { t:"t8", d:"el", src:"The queen herself set out at dawn.", model:"regina ipsa prima luce profecta est." },
+  { t:"t8", d:"el", src:"The same general looked after his soldiers for many days.", model:"idem imperator multos dies milites suos curabat." },
+  { t:"t8", d:"el", src:"We will set out from here and quickly go there.", model:"hinc proficiscemur et celeriter illuc ibimus." },
+  { t:"t8", d:"el", src:"Be brave and be led by the general himself, soldiers!", model:"este fortes et ab imperatore ipso ducimini, milites!" },
+  { t:"t8", d:"el", src:"No one was able to bear the anger of the gods.", model:"nemo iram deorum ferre poterat." },
+  { t:"t7", d:"el", src:"The leader was encouraging the sailors before the storm.", model:"dux nautas ante tempestatem hortabatur." },
+  { t:"t7", d:"el", src:"Many brave men died for their fatherland.", model:"multi viri fortes pro patria mortui sunt." },
+  { t:"t7", d:"le", src:"iuvenis fortis pericula belli non verebatur.", model:"The brave young man did not fear the dangers of war." },
+  { t:"t7", d:"el", src:"The old men were trying to speak, but the rest were afraid.", model:"senes loqui conabantur, sed ceteri timebant." }
 ];
-function genTranslate(){
-  const q = rand(TRANSLATE_BANK);
-  return { kind:"selfmark", category:"translate", itemKey:`tr:${q.lat}`,
-    eyebrow:"Translate · self-marked",
-    prompt:`<span class="lat">${stripMacrons(q.lat)}</span>`, model:stripMacrons(q.model) };
+if(typeof window!=="undefined") window.TRANSLATE_BANK = TRANSLATE_BANK;
+function genTranslate(sel){
+  const allTopics = SCOPE.translate.groups.map(g=>g.id);
+  const topics = (sel && Array.isArray(sel.groups) && sel.groups.length) ? sel.groups : allTopics;
+  const dirs = (sel && Array.isArray(sel.dirs) && sel.dirs.length) ? sel.dirs : ["le","el"];
+  let pool = TRANSLATE_BANK.filter(q=> topics.includes(q.t) && dirs.includes(q.d));
+  if(!pool.length) pool = TRANSLATE_BANK;
+  const q = rand(pool);
+  const la = q.d==="le";
+  const topicLabel = (SCOPE.translate.groups.find(g=>g.id===q.t)||{}).label || q.t;
+  return { kind:"selfmark", category:"translate:"+q.t, itemKey:`tr:${q.d}:${q.src}`,
+    eyebrow:`Translate · ${la?"Latin → English":"English → Latin"} · ${topicLabel}`,
+    prompt: la? `<span class="lat">${q.src}</span>` : q.src,
+    model: q.model, modelLat: !la };
 }
 
 function generate(session){
@@ -3540,7 +3773,7 @@ function generate(session){
     case "infinitives": return genInfinitive(sel);
     case "gerunds": return tbl? genGerundTable(sel) : genGerund(sel);
     case "parse": return genParse(sel);
-    case "translate": return genTranslate();
+    case "translate": return genTranslate(sel);
   }
 }
 
@@ -3736,7 +3969,7 @@ const DEFAULT_SCOPE = {
   adjadv:{groups:["a1","a3"],tasks:["tdec","tcomp","tadv"]},
   pronoun:{groups:["ego","tu","nos","vos","se","is","hic","ille","ipse","qui","quis"]},
   parse:{parseModule:"decline",groups:["d1","d2","d3","d4","d5"]},
-  translate:{}
+  translate:{groups:["t1","t2","t3","t4","t5","t6","t7","t8"],dirs:["le","el"]}
 };
 const setupChoice = { module:"decline", scope:JSON.parse(JSON.stringify(DEFAULT_SCOPE)), mode:"practice" };
 const ASG_GRACE_MS = (typeof window!=="undefined" && window.LVDVS_GRACE_MS) || 30*60*1000;
@@ -3798,6 +4031,10 @@ function scopeControls(module, store, onChange){
   const cfg = SCOPE[module]; const sc = store[module] || (store[module]={});
   const box = el("div",{class:"scope"});
   if(module==="translate"){
+    box.appendChild(subhead("Topics"));
+    box.appendChild(checkGroup(cfg.groups, sc, "groups", onChange));
+    box.appendChild(subhead("Direction"));
+    box.appendChild(checkGroup(cfg.dirs, sc, "dirs", onChange));
     box.appendChild(el("p",{class:"muted small"}, "Read each sentence, translate it, then reveal the model and mark yourself."));
     return field("Scope", box);
   }
@@ -3926,7 +4163,7 @@ function renderDrill(main){
     const revealBtn = el("button",{class:"primary", onclick:()=>{
       if(state.session.answered) return;
       feedback.innerHTML="";
-      feedback.appendChild(el("div",{class:"model"}, el("span",{class:"muted small"},"Model translation"), el("div",{}, q.model)));
+      feedback.appendChild(el("div",{class:"model"}, el("span",{class:"muted small"},"Model translation"), el("div",{class:q.modelLat?"lat":""}, q.model)));
       feedback.appendChild(el("div",{class:"selfmark"},
         el("button",{class:"ok-btn", onclick:()=>{ markSelf(q,true,feedback); }}, "I had it"),
         el("button",{class:"err-btn", onclick:()=>{ markSelf(q,false,feedback); }}, "Missed it")));
@@ -4839,27 +5076,32 @@ function assignmentBreakdown(a, cls, attempts){
 }
 function scopeSummary(module, scope){
   if(!scope) return "all";
-  if(module==="translate") return "translation";
   let groupsCfg;
   if(module==="parse"){ const sm=scope.parseModule||"decline"; groupsCfg=(SCOPE[sm]&&SCOPE[sm].groups)||[]; }
   else groupsCfg = (SCOPE[module]&&SCOPE[module].groups)||[];
   const labels = (scope.groups||[]).map(id=>{ const g=groupsCfg.find(x=>x.id===id); return g?g.label:id; });
-  if(!labels.length) return "all";
-  if(groupsCfg.length && labels.length===groupsCfg.length) return "all";
-  // collapse a shared trailing word: "1st declension, 2nd declension" -> "1st, 2nd declension"
-  if(labels.length>1){
+  let out;
+  if(!labels.length) out = "all";
+  else if(groupsCfg.length && labels.length===groupsCfg.length) out = "all";
+  else if(labels.length>1){
+    // collapse a shared trailing word: "1st declension, 2nd declension" -> "1st, 2nd declension"
     const parts = labels.map(l=>l.split(" "));
     const last = parts[0][parts[0].length-1];
     if(parts.every(p=>p.length>=2 && p[p.length-1]===last))
-      return parts.map(p=>p.slice(0,-1).join(" ")).join(", ") + " " + last;
+      out = parts.map(p=>p.slice(0,-1).join(" ")).join(", ") + " " + last;
+    else out = labels.join(", ");
   }
-  return labels.join(", ");
+  else out = labels.join(", ");
+  if(module==="translate" && Array.isArray(scope.dirs) && scope.dirs.length===1)
+    out += " \u00b7 " + (scope.dirs[0]==="le" ? "Latin\u2192English" : "English\u2192Latin");
+  return out;
 }
 function catLabel(cat){
   const [a,b]=String(cat).split(":");
   const base={decline:"Nouns",conjugate:"Verbs",adj:"Adjectives",comparison:"Comparison",adverb:"Adverbs",pronoun:"Pronouns",participle:"Participles",infinitive:"Infinitives",gerund:"Gerunds & gerundives",parse:"Parsing",translate:"Translation"}[a]||a;
   if(!b) return base;
-  const spec={"1":"1st decl.","2":"2nd decl.","3":"3rd decl.","4":"4th decl.","5":"5th decl.","irr":"irregular","3io":"3rd-io conj.","present":"present","perfect":"perfect","future":"future","gerund":"gerund","gerundive":"gerundive","adj1":"1st/2nd decl.","adj3":"3rd decl.","nominal":"nominal","verb":"verbal"}[b]||b;
+  const spec={"1":"1st decl.","2":"2nd decl.","3":"3rd decl.","4":"4th decl.","5":"5th decl.","irr":"irregular","3io":"3rd-io conj.","present":"present","perfect":"perfect","future":"future","gerund":"gerund","gerundive":"gerundive","adj1":"1st/2nd decl.","adj3":"3rd decl.","nominal":"nominal","verb":"verbal",
+    "t1":"3rd-decl. adjectives","t2":"pronouns & 4th decl.","t3":"imperatives, time & place","t4":"present passive & 5th decl.","t5":"perfect passive & comparison","t6":"relative clauses, hic & ille","t7":"deponent verbs","t8":"possum, eo, fero"}[b]||b;
   return base+" · "+spec;
 }
 function classWeakSpots(attempts){
