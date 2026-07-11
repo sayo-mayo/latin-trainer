@@ -2759,15 +2759,43 @@ const Cloud = {
   async loadOrCreateProfile(user){
     const { db, api } = this.fb;
     const ref = api.doc(db, "users", user.uid);
-    let snap=null; try{ snap = await api.getDoc(ref); }catch(e){}
+    let snap=null, readOk=false;
+    for(let i=0;i<3 && !readOk;i++){
+      try{ snap = await api.getDoc(ref); readOk=true; }
+      catch(e){ await new Promise(r=>setTimeout(r, 300*(i+1))); }
+    }
     if(snap && snap.exists && snap.exists()){
       const d = snap.data();
-      return { uid:user.uid, displayName:d.displayName||user.email, email:user.email, role:d.role||"student", classIds:d.classIds||[], anon:!!d.anon };
+      this.pendingSignup = null;
+      const profile = { uid:user.uid, displayName:d.displayName||user.email, email:user.email, role:d.role||"student", classIds:d.classIds||[], anon:!!d.anon };
+      return await this.healTeacherRole(profile);
     }
+    if(!readOk){
+      /* The read failed (offline / transient). The account may well exist:
+         NEVER fabricate a fresh profile and persist it over the real one.
+         Session-only fallback; no cloud writes of this profile. */
+      return { uid:user.uid, displayName:user.email, email:user.email, role:"student", classIds:[], anon:true, unpersisted:true };
+    }
+    /* read succeeded and the doc definitively does not exist: first sign-in */
     const su = this.pendingSignup || {};
     const profile = { uid:user.uid, displayName:su.displayName||user.email, email:user.email, role:su.role||"student", classIds:[], anon:true };
-    try{ await api.setDoc(ref, { displayName:profile.displayName, email:profile.email, role:profile.role, classIds:[], anon:true }); }catch(e){}
+    try{ await api.setDoc(ref, { displayName:profile.displayName, email:profile.email, role:profile.role, classIds:[], anon:true }, { merge:true }); }catch(e){}
     this.pendingSignup = null;
+    return await this.healTeacherRole(profile);
+  },
+  async healTeacherRole(profile){
+    /* Recovery for accounts whose role field was clobbered: anyone who owns
+       classes is a teacher. Restores the users doc and the session profile. */
+    if(profile.role==="teacher") return profile;
+    const { db, api } = this.fb;
+    try{
+      const qs = await api.getDocs(api.query(api.collection(db,"classes"), api.where("teacherId","==",profile.uid)));
+      let owns=false; qs.forEach(()=>{ owns=true; });
+      if(owns){
+        profile.role = "teacher";
+        try{ await api.setDoc(api.doc(db,"users",profile.uid), { role:"teacher" }, { merge:true }); }catch(e){}
+      }
+    }catch(e){}
     return profile;
   },
   async hydrate(profile){
@@ -2845,7 +2873,7 @@ const Cloud = {
     const { db, api } = this.fb;
     const ops = [];
     try{
-      if(kind==="profile") ops.push(api.setDoc(api.doc(db,"users",payload.uid), { displayName:payload.displayName, email:payload.email||null, role:payload.role, classIds:payload.classIds||[], anon:!!payload.anon }));
+      if(kind==="profile"){ if(!payload.unpersisted) ops.push(api.setDoc(api.doc(db,"users",payload.uid), { displayName:payload.displayName, email:payload.email||null, role:payload.role, classIds:payload.classIds||[], anon:!!payload.anon })); }
       else if(kind==="progress" && state.user) ops.push(api.setDoc(api.doc(db,"progress",state.user.uid), payload));
       else if(kind==="classes") payload.forEach(c=> ops.push(api.setDoc(api.doc(db,"classes",c.id), { id:c.id, name:c.name, teacherId:c.teacherId, joinCode:c.joinCode, removed:c.removed||[] })));
       else if(kind==="assignments") payload.forEach(a=> ops.push(api.setDoc(api.doc(db,"assignments",a.id), a)));
@@ -4533,8 +4561,7 @@ function speedBoard(card, ev){
   let masking = false;
   if(scope==="class"){
     const classes = DB.classes().filter(c => me.role==="teacher" ? c.teacherId===me.uid : (me.classIds||[]).includes(c.id));
-    if(!classes.length){ card.appendChild(el("p",{class:"muted"}, "Join or create a class to race it, or switch to the global board above.")); }
-    else {
+    if(classes.length){
       if(!state.ui.lbClassId || !classes.find(c=>c.id===state.ui.lbClassId)) state.ui.lbClassId = classes[0].id;
       if(FIREBASE_ENABLED){
         state._lbScores = state._lbScores || {}; state._lbLoading = state._lbLoading || {};
