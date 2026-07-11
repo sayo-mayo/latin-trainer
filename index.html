@@ -3934,7 +3934,7 @@ function updateSyncBanner(){
 function renderApp(){
   const r = root(); r.innerHTML = ""; document.onkeydown = null;
   const about = document.getElementById("about");
-  if(about) about.style.display = state.user ? "none" : "";
+  if(about) about.remove();   // static SEO copy is for crawlers/no-JS only, never the running app
   if(state._speedIv && !(state.view==="speed" && state._speedRun && !state._speedRun.done)){ clearInterval(state._speedIv); state._speedIv=null; }
   if(FIREBASE_ENABLED && !state.user){ if(Cloud.active) renderAuth(r); else renderLoading(r); return; }
   r.appendChild(topbar());
