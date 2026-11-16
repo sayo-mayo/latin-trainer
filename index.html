@@ -452,7 +452,7 @@ window.LVDVS_FIREBASE_CONFIG = {
   measurementId: "G-4KDR9FTTQH"
 };
 </script>
-<script type="module">
+<script type="module" onerror="window.LVDVS_FB_ERROR=window.LVDVS_FB_ERROR||new Error('Firebase SDK failed to load')">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -2712,25 +2712,72 @@ const DB = {
    Pattern: local cache is the source the synchronous UI reads; Firestore is
    hydrated into that cache on login and written through on every change.
 --------------------------------------------------------------------------- */
+/* Merge two copies of a progress doc without ever going backwards.
+   Every counter only grows, so for each record keep the copy that has seen
+   more answers; speed records keep the faster time. Used when the cloud copy
+   arrives: whichever of device/cloud is further along wins, record by record. */
+function mergeProgress(local, cloud){
+  const a = local||{}, b = cloud||{};
+  const out = Object.assign({}, b, a);
+  const bySeen = (x,y)=> !y ? x : !x ? y : ((y.seen||0) > (x.seen||0) ? y : x);
+  const byMs = (x,y)=> !y ? x : !x ? y : ((y.ms||Infinity) < (x.ms||Infinity) ? y : x);
+  const mergeMap = (x,y,pick)=>{ x=x||{}; y=y||{}; const r={};
+    new Set([...Object.keys(x), ...Object.keys(y)]).forEach(k=>{ r[k]=pick(x[k], y[k]); }); return r; };
+  out.items = mergeMap(a.items, b.items, bySeen);
+  out.stats = mergeMap(a.stats, b.stats, bySeen);
+  out.history = mergeMap(a.history, b.history, bySeen);
+  if(a.speed || b.speed) out.speed = mergeMap(a.speed, b.speed, byMs);
+  // totals: the copy that has seen more, or the merged per-category sums if larger
+  const tot = (b.totalSeen||0) > (a.totalSeen||0) ? b : a;
+  let sumSeen=0, sumCorrect=0; for(const k in out.stats){ sumSeen+=out.stats[k].seen||0; sumCorrect+=out.stats[k].correct||0; }
+  if(sumSeen > (tot.totalSeen||0)){ out.totalSeen=sumSeen; out.totalCorrect=sumCorrect; }
+  else { out.totalSeen=tot.totalSeen||0; out.totalCorrect=tot.totalCorrect||0; }
+  // streak travels with the most recent practice day
+  const ta = a.lastDay ? Date.parse(a.lastDay) : -Infinity, tb = b.lastDay ? Date.parse(b.lastDay) : -Infinity;
+  const s = tb > ta ? b : (ta > tb ? a : ((b.streak||0) > (a.streak||0) ? b : a));
+  out.lastDay = s.lastDay==null ? null : s.lastDay; out.streak = s.streak||0;
+  return out;
+}
+/* key-order-independent JSON, for "did the merge change anything?" */
+function canonJSON(o){
+  return JSON.stringify(o, (k,v)=> (v && typeof v==="object" && !Array.isArray(v))
+    ? Object.keys(v).sort().reduce((r,key)=>{ r[key]=v[key]; return r; }, {}) : v);
+}
+
+const SDK_SLOW_MS = (typeof window!=="undefined" && window.LVDVS_SDK_TIMEOUT_MS) || 9000;
 const Cloud = {
-  active:false, fb:null, pendingSignup:null,
-  waitForSDK(){
+  active:false, fb:null, pendingSignup:null, offline:false,
+  /* Resolves when the Firebase SDK is ready. With no fallback session, a slow or
+     failed load rejects (→ local mode). With a signed-in session on screen,
+     onSlow() fires instead and we keep waiting, so a late SDK still connects. */
+  waitForSDK(onSlow){
     if(window.LVDVS_FB) return Promise.resolve(window.LVDVS_FB);
     return new Promise((resolve,reject)=>{
-      let waited=0; const iv=setInterval(()=>{
+      let waited=0, slow=false; const iv=setInterval(()=>{
         if(window.LVDVS_FB){ clearInterval(iv); resolve(window.LVDVS_FB); }
         else if(window.LVDVS_FB_ERROR){ clearInterval(iv); reject(window.LVDVS_FB_ERROR); }
-        else if((waited+=60) > 9000){ clearInterval(iv); reject(new Error("Firebase SDK load timeout")); }
+        else if(!slow && (waited+=60) > SDK_SLOW_MS){
+          if(onSlow){ slow=true; onSlow(); }
+          else { clearInterval(iv); reject(new Error("Firebase SDK load timeout")); }
+        }
       },60);
     });
   },
+  goOffline(){ this.offline = true; updateSyncBanner(); },
   async start(onUser){
     // optimistic paint: if this device has a cached session, render it immediately
     // and let the SDK + auth + hydration catch up in the background.
     const lastUid = kv.getJSON("lvdvs:lastUid", null);
     const cached = lastUid ? DB.profile(lastUid) : null;
     if(cached){ state.user = cached; this.optimistic = true; onUser(cached); }
-    this.fb = await this.waitForSDK();
+    try{ this.fb = await this.waitForSDK(cached ? ()=>this.goOffline() : null); }
+    catch(e){
+      // SDK blocked or broken. Keep the signed-in student on screen and keep their
+      // work on this device; it merges into the cloud on the next good load.
+      if(cached){ this.goOffline(); return; }
+      throw e;
+    }
+    if(this.offline){ this.offline = false; updateSyncBanner(); }
     this.active = true;
     const { auth, api } = this.fb;
     api.onAuthStateChanged(auth, async (user)=>{
@@ -2741,6 +2788,8 @@ const Cloud = {
         this.optimistic = false;
         state.user = null; onUser(null); return;
       }
+      // writes buffered under a different cached account must not land on this one
+      if(this.optimistic && state.user && state.user.uid !== user.uid) this.pending = [];
       const matchesCache = this.optimistic && state.user && state.user.uid === user.uid;
       this.optimistic = false;
       const profile = await this.loadOrCreateProfile(user);
@@ -2801,9 +2850,21 @@ const Cloud = {
   },
   async hydrate(profile){
     const { db, api } = this.fb;
-    // progress runs alongside the class/assignment/attempt chain
+    // progress runs alongside the class/assignment/attempt chain.
+    // Never replace the device copy outright: it may hold answers the cloud has
+    // not got yet (closed tab, offline, failed write). Merge, then push back up
+    // if the device was ahead.
     const progressP = api.getDoc(api.doc(db,"progress",profile.uid))
-      .then(ps=>{ if(ps&&ps.exists&&ps.exists()) kv.setJSON("lvdvs:progress:"+profile.uid, ps.data()); })
+      .then(ps=>{
+        const key = "lvdvs:progress:"+profile.uid;
+        const local = kv.getJSON(key, null);         // read at arrival time, not at request time
+        const cloud = (ps&&ps.exists&&ps.exists()) ? ps.data() : null;
+        const merged = cloud ? (local ? mergeProgress(local, cloud) : cloud) : local;
+        if(!merged) return;
+        kv.setJSON(key, merged);
+        const mine = state.user && state.user.uid===profile.uid;
+        if(mine && (!cloud || canonJSON(merged)!==canonJSON(cloud))){ this.push("progress", merged); pushScores(merged); }
+      })
       .catch(()=>{});
     let classes=[];
     try{
@@ -2908,12 +2969,20 @@ const Cloud = {
     const q = this.pending.splice(0);
     if(!q.length){ this.syncFailed=false; updateSyncBanner(); return; }
     q.forEach(([k,p])=>{ if(k==="__remove") this.remove(p.coll, p.id); else this.push(k, p); });
+    updateSyncBanner();
   },
   signIn(email,pw){ const {auth,api}=this.fb; return api.signInWithEmailAndPassword(auth,email,pw); },
   resetPassword(email){ const {auth,api}=this.fb; return api.sendPasswordResetEmail(auth,email); },
   signUp(email,pw,displayName,role){ this.pendingSignup={displayName,role}; const {auth,api}=this.fb; return api.createUserWithEmailAndPassword(auth,email,pw); },
   google(){ const {auth,api}=this.fb; return api.signInWithPopup(auth, new api.GoogleAuthProvider()); },
-  signOut(){ const {auth,api}=this.fb; return api.signOut(auth); }
+  signOut(){
+    if(!this.fb){   // SDK never loaded: forget the cached session and start clean
+      kv.setJSON("lvdvs:lastUid", null); this.pending = [];
+      try{ location.reload(); }catch(e){}
+      return Promise.resolve();
+    }
+    const {auth,api}=this.fb; return api.signOut(auth);
+  }
 };
 
 /* ---------------------------------------------------------------------------
@@ -3907,7 +3976,7 @@ function topbar(){
   });
   const acct = el("div",{class:"acct"},
     el("span",{class:"who"}, `${state.user.displayName} · ${state.user.role}`),
-    Cloud.active
+    FIREBASE_ENABLED
       ? el("button",{class:"linklike", onclick:()=>Cloud.signOut()}, "sign out")
       : el("button",{class:"linklike", title:"Switch role (demo)", onclick:toggleRole}, "switch role"),
     el("button",{class:"iconbtn", title:"Toggle theme", onclick:toggleTheme}, state.settings.theme==="dark"?"☼":"☾")
@@ -3924,7 +3993,12 @@ function persistSettings(){ kv.setJSON("lvdvs:settings", state.settings); }
 /* persistent toast shown while cloud writes are failing; work stays in local storage */
 function updateSyncBanner(){
   let b = document.getElementById("syncbanner");
-  if(Cloud.syncFailed || Cloud.pending.length){
+  if(Cloud.offline){
+    if(!b){ b = el("div",{id:"syncbanner", class:"syncbanner"}); document.body.appendChild(b); }
+    b.innerHTML = "";
+    b.appendChild(el("span",{},"Can't reach the sync server — your work is saved on this device and syncs next time you load online."));
+    b.appendChild(el("button",{class:"linklike", onclick:()=>location.reload()},"Reload"));
+  } else if(Cloud.syncFailed){   // writes merely queued before sign-in completes are not failures
     if(!b){ b = el("div",{id:"syncbanner", class:"syncbanner"}); document.body.appendChild(b); }
     b.innerHTML = "";
     b.appendChild(el("span",{},"Cloud sync failed — your work is saved on this device."));
@@ -4813,7 +4887,7 @@ function renderProfile(main){
   if(me.email) ac.appendChild(field("Email", el("div",{class:"readonly"}, me.email)));
   const roleRow = el("div",{class:"name-edit"},
     el("span",{class:"rolebadge"}, me.role==="teacher"?"Teacher":"Student"));
-  if(!Cloud.active) roleRow.appendChild(el("button",{class:"ghost small", onclick:toggleRole}, "Switch (demo)"));
+  if(!FIREBASE_ENABLED) roleRow.appendChild(el("button",{class:"ghost small", onclick:toggleRole}, "Switch (demo)"));
   ac.appendChild(field("Account type", roleRow));
   main.appendChild(ac);
 
